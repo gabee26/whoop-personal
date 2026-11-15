@@ -1,0 +1,74 @@
+name: WHOOP - personal iPhone IPA
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  ios:
+    runs-on: macos-26
+    timeout-minutes: 60
+    steps:
+      - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5.1.0
+      - name: Prepare personal identity
+        run: python3 Tools/prepare_personal_whoop.py
+      - name: Test analytics and presentation scales
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p build
+          swift test --package-path Packages/StrandAnalytics 2>&1 | tee build/personal-whoop-analytics-tests.log
+          swift test --package-path Packages/StrandDesign 2>&1 | tee build/personal-whoop-design-tests.log
+      - name: Install XcodeGen
+        run: brew install xcodegen
+      - name: Generate project
+        run: xcodegen generate --spec project.personal-whoop.generated.yml
+      - name: Build iPhone Release
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p build
+          xcodebuild -project Strand.xcodeproj -scheme NOOPiOS \
+            -configuration Release -destination 'generic/platform=iOS' \
+            -derivedDataPath build/personal-whoop-dd \
+            BUNDLE_ID_PREFIX=com.gabriel.whooppersonal \
+            CODE_SIGNING_ALLOWED=NO CODE_SIGNING_REQUIRED=NO CODE_SIGN_IDENTITY="" \
+            build 2>&1 | tee build/personal-whoop-xcodebuild.log
+      - name: Verify identity and prepare SideStore package
+        shell: bash
+        run: |
+          set -euo pipefail
+          APP="$PWD/build/personal-whoop-dd/Build/Products/Release-iphoneos/NOOP.app"
+          test -d "$APP"
+          test "$(/usr/libexec/PlistBuddy -c 'Print :CFBundleIdentifier' "$APP/Info.plist")" = com.gabriel.whooppersonal.noop
+          test "$(/usr/libexec/PlistBuddy -c 'Print :CFBundleDisplayName' "$APP/Info.plist")" = WHOOP
+          test "$(/usr/libexec/PlistBuddy -c 'Print :CFBundleIdentifier' "$APP/PlugIns/NOOPWidgets.appex/Info.plist")" = com.gabriel.whooppersonal.noop.widgets
+          test "$(/usr/libexec/PlistBuddy -c 'Print :AppGroupIdentifier' "$APP/Info.plist")" = group.com.gabriel.whooppersonal.noop.staging
+          # The upstream sideload process excludes the embedded watch app.
+          if [ -d "$APP/Watch" ]; then rm -rf "$APP/Watch"; fi
+          bash Tools/prepare-ios-sideload-app.sh "$APP"
+          mkdir -p build/personal-whoop-package/Payload
+          ditto "$APP" build/personal-whoop-package/Payload/NOOP.app
+          (cd build/personal-whoop-package && zip -qry ../WHOOP-ios.ipa Payload)
+      - name: Save IPA and provenance
+        uses: actions/upload-artifact@v4
+        with:
+          name: WHOOP-iPhone-${{ github.run_number }}
+          path: |
+            build/WHOOP-ios.ipa
+            personal-whoop-build-manifest.generated.json
+          if-no-files-found: error
+          retention-days: 14
+      - name: Save build log
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: WHOOP-build-log-${{ github.run_number }}
+          path: |
+            build/personal-whoop-xcodebuild.log
+            build/personal-whoop-analytics-tests.log
+            build/personal-whoop-design-tests.log
+          if-no-files-found: ignore
+          retention-days: 7
