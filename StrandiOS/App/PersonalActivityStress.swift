@@ -103,7 +103,7 @@ struct PersonalActivityStress: View {
                             }
                         }.frame(height: S.detailChartHeight)
                     }
-                    Text("Valores diários guardados pelo NOOP. Este gráfico não representa uma medição contínua nem o stress neste momento.")
+                    Text("Valores diários guardados localmente. Este gráfico não representa uma medição contínua nem o stress neste momento.")
                         .font(S.body).foregroundStyle(S.secondary)
                 }
             }

@@ -453,7 +453,7 @@ struct StrandiOSApp: App {
 /// `WhatsNewView`, `AppChangelog`, and `Terms` symbols all compile into the iOS target unchanged.
 private struct iOSRootView: View {
     @AppStorage("noop.onboarded") private var onboarded = false
-    @AppStorage("noop.lastSeenChangelogVersion") private var lastSeenChangelog = ""
+    @AppStorage("personal.lastSeenPresentationVersion") private var lastSeenChangelog = ""
     @AppStorage("noop.acceptedTermsVersion") private var acceptedTerms = ""
     @State private var showWhatsNew = false
     /// Starts false so a cold-launch external action can't race this view's onAppear decision about the
@@ -486,11 +486,11 @@ private struct iOSRootView: View {
                 demoBypass || (onboarded && acceptedTerms == Terms.currentVersion
                     && automaticLaunchSheetResolved))
             if !onboarded && !demoBypass {
-                OnboardingWizard(onFinished: {
+                PersonalWelcome(onFinished: {
                     onboarded = true
                     // A brand-new user just saw the expectations in onboarding — don't also pop the
                     // changelog at them; mark them current.
-                    lastSeenChangelog = AppChangelog.currentVersion
+                    lastSeenChangelog = PersonalWhatsNew.revision
                 })
                 .transition(.opacity)
                 .zIndex(1)
@@ -498,7 +498,7 @@ private struct iOSRootView: View {
             // Terms acknowledgment gate — over EVERYTHING (before onboarding/pairing/Bluetooth) until
             // the current terms version is accepted; re-appears if the terms materially change.
             if acceptedTerms != Terms.currentVersion && !demoBypass {
-                TermsGateView(onAccept: {
+                PersonalTermsGate(onAccept: {
                     // Keep any external action behind the gate while the accepted-terms change decides
                     // whether What's New must present next. This write must precede acceptedTerms.
                     automaticLaunchSheetResolved = false
@@ -510,9 +510,12 @@ private struct iOSRootView: View {
         }
         .animation(.easeInOut(duration: 0.35), value: onboarded)
         .animation(.easeInOut(duration: 0.35), value: acceptedTerms)
-        .sheet(isPresented: $showWhatsNew, onDismiss: { automaticLaunchSheetResolved = true }) {
-            WhatsNewView(onClose: {
-                lastSeenChangelog = AppChangelog.currentVersion
+        .sheet(isPresented: $showWhatsNew, onDismiss: {
+            lastSeenChangelog = PersonalWhatsNew.revision
+            automaticLaunchSheetResolved = true
+        }) {
+            PersonalWhatsNew(onClose: {
+                lastSeenChangelog = PersonalWhatsNew.revision
                 showWhatsNew = false
             })
         }
@@ -523,7 +526,7 @@ private struct iOSRootView: View {
             showWhatsNewIfDue()
             // Seed the current What's New into the Updates inbox (idempotent per version) so the bell
             // collects it even if the user dismisses the auto sheet.
-            UpdateStore.shared.seedWhatsNewIfNeeded()
+            // Personal builds show their own revision notes, not upstream release announcements.
             // #1659: iOS cannot auto-update a sideloaded build - no API lets an app install or re-sign an
             // .ipa - so the most NOOP can do is NOTICE a release and say so.
             //
@@ -532,7 +535,7 @@ private struct iOSRootView: View {
             // during first run, before the Terms gate the user has not accepted yet. While the default was
             // off, nothing made that visible.
             if onboarded && acceptedTerms == Terms.currentVersion {
-                UpdateWatch.runIfDue(currentVersion: UpdateWatch.installedVersion, sideloadHint: true)
+                // A personal IPA is updated through its own build workflow.
             }
         }
         .onChange(of: acceptedTerms) { _, _ in showWhatsNewIfDue() }
@@ -555,7 +558,7 @@ private struct iOSRootView: View {
         }
         // Existing users who updated: their last-seen version is behind the current one.
         if onboarded && acceptedTerms == Terms.currentVersion
-            && lastSeenChangelog != AppChangelog.currentVersion {
+            && lastSeenChangelog != PersonalWhatsNew.revision {
             automaticLaunchSheetResolved = false
             showWhatsNew = true
         } else {

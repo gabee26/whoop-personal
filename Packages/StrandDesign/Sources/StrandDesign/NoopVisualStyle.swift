@@ -81,9 +81,7 @@ public struct NoopPanelSurface: View {
     public var body: some View {
         let shape = RoundedRectangle(cornerRadius: cornerRadius, style: .continuous)
         #if os(iOS)
-        RoundedRectangle(cornerRadius: PersonalWhoopStyle.radius, style: .continuous)
-            .fill(PersonalWhoopStyle.card)
-            .opacity(surfaceOpacity)
+        PersonalGlassSurface().opacity(surfaceOpacity)
         #else
         shape
             .fill(

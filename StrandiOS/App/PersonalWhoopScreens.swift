@@ -7,7 +7,7 @@ import WhoopStore
 private typealias W = PersonalWhoopStyle
 
 private enum PersonalDestination: String, Identifiable {
-    case sleep, recovery, effort, health, stress, activities, live, alarm, settings, metrics, plans, devices, backup, journal, intelligence, comparison, tools, sources
+    case sleep, recovery, effort, health, stress, activities, live, alarm, settings, metrics, plans, devices, backup, journal, intelligence, comparison, tools, sources, trends
     var id: String { rawValue }
 }
 
@@ -34,7 +34,7 @@ private struct PersonalDetail: View {
         case .alarm: SmartAlarmView()
         case .settings: PersonalSettingsScreen()
         case .metrics: PersonalHealthHistory()
-        case .plans: InsightsHubView()
+        case .plans: PersonalDailyPlan()
         case .devices: PersonalDeviceScreen()
         case .backup: BackupSyncView()
         case .journal: InsightsView()
@@ -42,16 +42,19 @@ private struct PersonalDetail: View {
         case .comparison: PersonalComparisonScreen()
         case .tools: PersonalTrainingTools()
         case .sources: PersonalImportScreen()
+        case .trends: TrendsView()
         }
     }
 }
 
 struct PersonalWhoopHome: View {
+    @EnvironmentObject private var ble: BLEManager
     @EnvironmentObject private var repo: Repository
     @AppStorage("personal.dashboard.hrv") private var showHRV = true
     @AppStorage("personal.dashboard.rhr") private var showRHR = true
     @AppStorage("personal.dashboard.steps") private var showSteps = true
     @AppStorage("personal.dashboard.calories") private var showCalories = true
+    @State private var selectedMetric: MetricDescriptor?
     @State private var customize = false
     @State private var offset = 0
     @State private var rest: Double?
@@ -114,13 +117,14 @@ struct PersonalWhoopHome: View {
                                 action("DEFINIR ALARME", "alarm", .alarm)
                             }
                         }
+                        PersonalSyncCard()
                         Text("O meu plano").font(W.heading)
                         Button { destination = .plans } label: {
                             PersonalWhoopCard {
                                 VStack(alignment: .leading, spacing: W.gap) {
                                     Text("Dá o melhor de ti").font(W.heading)
-                                    Text("Acompanha os teus hábitos e descobre o que influencia a tua recuperação.").font(W.body).foregroundStyle(W.secondary)
-                                    Text("EXPLORAR INSIGHTS  →").font(W.label).tracking(1).foregroundStyle(W.effort)
+                                    Text("Define os teus objetivos e acompanha o progresso nos teus registos.").font(W.body).foregroundStyle(W.secondary)
+                                    Text("VER OBJETIVOS  →").font(W.label).tracking(1).foregroundStyle(W.effort)
                                 }
                             }
                         }
@@ -129,10 +133,10 @@ struct PersonalWhoopHome: View {
                             Spacer()
                             Button("PERSONALIZAR") { customize = true }.font(W.label).foregroundStyle(W.effort)
                         }
-                        if showHRV { metric("VARIABILIDADE DA FREQUÊNCIA CARDÍACA", "waveform.path.ecg", formatted(day?.avgHrv, unit: " ms")) }
-                        if showRHR { metric("FREQUÊNCIA CARDÍACA EM REPOUSO", "heart", day?.restingHr.map { "\($0) bpm" } ?? "--") }
-                        if showSteps { metric("PASSOS", "shoeprints.fill", day?.steps.map { String($0) } ?? "--") }
-                        if showCalories { metric("CALORIAS ATIVAS ESTIMADAS", "flame", formatted(day?.activeKcalEst, unit: " kcal")) }
+                        if showHRV { metric("VARIABILIDADE DA FREQUÊNCIA CARDÍACA", "waveform.path.ecg", formatted(day?.avgHrv, unit: " ms"), key: "hrv") }
+                        if showRHR { metric("FREQUÊNCIA CARDÍACA EM REPOUSO", "heart", day?.restingHr.map { "\($0) bpm" } ?? "--", key: "rhr") }
+                        if showSteps { metric("PASSOS", "shoeprints.fill", day?.steps.map { String($0) } ?? "--", key: "steps") }
+                        if showCalories { metric("CALORIAS ATIVAS ESTIMADAS", "flame", formatted(day?.activeKcalEst, unit: " kcal"), key: "energy_kcal") }
                         Button { destination = .stress } label: {
                             PersonalWhoopCard {
                                 VStack(alignment: .leading, spacing: W.section) {
@@ -147,9 +151,18 @@ struct PersonalWhoopHome: View {
                         header.padding(.vertical, W.gap).background(W.top)
                     }
                 }.padding(.horizontal, W.margin).padding(.bottom, W.dockHeight + W.section)
-            }.refreshable { await repo.refresh() }
+            }.refreshable {
+                if ble.state.historyReady { ble.syncNow() }
+                await repo.refresh()
+            }
         }.foregroundStyle(W.text).buttonStyle(.plain)
             .sheet(item: $destination) { PersonalDetail(destination: $0, dayKey: dayKey) }
+            .sheet(item: $selectedMetric) { metric in
+                NavigationStack {
+                    PersonalSeriesDetail(metric: metric)
+                        .toolbar { ToolbarItem(placement: .topBarTrailing) { Button("Fechar") { selectedMetric = nil } } }
+                }.preferredColorScheme(.dark)
+            }
             .sheet(isPresented: $customize) {
                 NavigationStack {
                     Form {
@@ -201,8 +214,8 @@ struct PersonalWhoopHome: View {
                 .padding(W.gap).background(W.track, in: RoundedRectangle(cornerRadius: W.radius))
         }
     }
-    private func metric(_ title: String, _ icon: String, _ value: String) -> some View {
-        Button { destination = .metrics } label: {
+    private func metric(_ title: String, _ icon: String, _ value: String, key: String) -> some View {
+        Button { selectedMetric = MetricCatalog.metric(key: key, source: Repository.whoopSource) } label: {
             PersonalWhoopCard {
                 HStack(spacing: W.gap) {
                     Image(systemName: icon).font(W.icon).foregroundStyle(W.muted)
@@ -349,7 +362,7 @@ struct PersonalDeviceScreen: View {
                     Image(systemName: "iphone").font(W.deviceIllustration)
                 }
                 Text(live.connected ? "WHOOP LIGADA" : "WHOOP DESLIGADA").font(W.heading)
-                Text(live.connected ? "A sincronização é gerida localmente pelo motor NOOP." : "Toca em emparelhar para ligares a tua pulseira.").font(W.body).foregroundStyle(W.secondary).multilineTextAlignment(.center)
+                Text(live.connected ? "A sincronização é gerida localmente no teu iPhone." : "Toca em emparelhar para ligares a tua pulseira.").font(W.body).foregroundStyle(W.secondary).multilineTextAlignment(.center)
                 Spacer()
                 Button { showManager = true } label: {
                     PersonalWhoopCard { Label(live.connected ? "GERIR DISPOSITIVO" : "EMPARELHAR UM DISPOSITIVO", systemImage: "applewatch").font(W.label).padding(.vertical, W.gap) }
@@ -389,14 +402,14 @@ struct PersonalWhoopMore: View {
                     row("ATIVIDADES", "figure.run", .activities)
                     row("DIÁRIO", "book", .journal)
                     row("ALARME", "alarm", .alarm)
-                    row("TENDÊNCIAS", "chart.xyaxis.line", .effort)
+                    row("TENDÊNCIAS", "chart.xyaxis.line", .trends)
                     row("INDICADORES", "waveform.path.ecg", .metrics)
                     row("COMPARAR INDICADORES", "chart.bar.xaxis", .comparison)
                     row("INSIGHTS", "sparkles", .intelligence)
                     row("IMPORTAR HISTÓRICO", "square.and.arrow.down", .sources)
                     row("CÓPIAS DE SEGURANÇA", "externaldrive", .backup)
                     row("TREINO E FERRAMENTAS", "dumbbell", .tools)
-                    Text("Versão pessoal baseada em NOOP. Indicadores locais; não é a aplicação oficial WHOOP.")
+                    Text("WHOOP · versão pessoal independente. Indicadores calculados no dispositivo.")
                         .font(W.label).foregroundStyle(W.muted).padding(.vertical, W.section)
                 }.padding(W.margin).padding(.bottom, W.dockHeight + W.section)
             }

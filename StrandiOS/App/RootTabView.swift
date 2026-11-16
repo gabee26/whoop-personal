@@ -129,7 +129,7 @@ struct RootTabView: View {
         TabView(selection: nativeTabSelection) {
             tab(todayTabRoot, "Today", "square.grid.2x2", path: $tabPaths[0], scrollSignal: scrollTop[0]).tag(0)
             tab(PersonalWhoopHealth(), "Saúde", "heart", path: $tabPaths[1], scrollSignal: scrollTop[1]).tag(1)
-            tab(PersonalHumansScreen(), "Humans", "person.3", path: $tabPaths[2], scrollSignal: scrollTop[2]).tag(2)
+            tab(PersonalDailyPlan(), "Plano", "checkmark.circle", path: $tabPaths[2], scrollSignal: scrollTop[2]).tag(2)
             // Coach is presented separately from the four navigation destinations.
             tab(PersonalWhoopMore(), "Mais", "line.3.horizontal", path: $tabPaths[4], scrollSignal: scrollTop[4]).tag(4)
         }

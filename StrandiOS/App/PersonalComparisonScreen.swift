@@ -58,7 +58,7 @@ struct PersonalComparisonScreen: View {
                             Text("IMPORTADO × CÁLCULO LOCAL").font(S.label).tracking(1)
                             Text("Compara o mesmo dia, sem misturar as duas fontes nem modificar os teus dados.")
                                 .font(S.body).foregroundStyle(S.secondary)
-                            Text("Usa uma exportação original da WHOOP como referência. Um ficheiro reexportado pelo NOOP pode conter cálculos locais e não é uma referência independente.")
+                            Text("Usa uma exportação original da WHOOP como referência. Um ficheiro reexportado por esta aplicação pode conter cálculos locais e não é uma referência independente.")
                                 .font(S.body).foregroundStyle(S.secondary)
                             Button("IMPORTAR OU GERIR HISTÓRICO") { showBackup = true }.font(S.label).tint(S.effort)
                         }

@@ -34,7 +34,7 @@ struct PersonalSettingsScreen: View {
                     PersonalWhoopCard {
                         VStack(alignment: .leading, spacing: S.gap) {
                             Text("WHOOP · VERSÃO PESSOAL").font(S.label)
-                            Text("Base NOOP. Dados e cálculos locais. Esta aplicação não é o serviço oficial WHOOP.")
+                            Text("Dados e cálculos locais. Esta aplicação não é o serviço oficial WHOOP. Créditos e licenças da base NOOP nas preferências avançadas.")
                                 .font(S.body).foregroundStyle(S.secondary)
                         }
                     }

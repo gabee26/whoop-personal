@@ -233,3 +233,51 @@ replace Swift type-checking. The new iOS branches still need the macOS-hosted ma
 IPA workflow and a device review, including real night data, pairing/reconnect,
 workout save, backup restoration and Coach configuration. No newly built IPA or
 measured accuracy improvement is claimed by this source revision.
+
+
+## Premium presentation and operational pass (2026-11-16)
+
+User feedback confirmed that revision 9437d9d built and installed. This pass has
+not yet been built on Xcode. It replaces the iOS first-run and update views with
+personal presentations, retaining existing onboarding completion and terms
+acceptance records. The update sheet uses its own revision key, marks swipe
+ dismissal as seen, and no longer proposes upstream NOOP release updates. The
+native launch background uses a named dark colour asset.
+
+PersonalGlassSurface provides a single material layer, restrained border and
+shadow. Reduce Transparency or Increase Contrast substitutes a solid card.
+Cards and the dock use this shared surface. Existing legal attribution, license
+notices, source identifiers, app group and bundle identifiers remain unchanged.
+The personal build generator creates an iOS-only localization catalogue with
+WHOOP display branding; it preserves format specifiers, source lookup keys,
+technical filenames, links and upstream legal attribution. The original shared
+catalogue remains unchanged. Branding tests run before resource generation in CI.
+
+Operational corrections and additions:
+- Pull-to-refresh now requests a history sync through BLEManager.syncNow when
+  historyReady permits it; the old personal home only reloaded database rows.
+- A sync card shows real connection, backfill blocks, last completion and errors.
+  It does not invent a completion percentage or treat a UI reload as a strap sync.
+- Trends opens TrendsView rather than the effort score. Dashboard metric cards
+  open their exact catalogue key/source; local calorie estimates use energy_kcal.
+- The former disconnected social placeholder becomes a local Plan tab. Sleep,
+  steps and weekly activity goals are user-editable and persisted locally. Missing
+  values are shown as unavailable, not successful goals or fabricated zeroes.
+- Live workouts expose the existing pause/resume action, active-time clock,
+  mean HR and effort, with an explicit connection-loss state and saved-history link.
+  The timer uses the existing tested ActiveWorkoutIndicatorModel/ActiveWorkoutClock.
+
+Scope limits: no official community/accounts, cloud coaching access, proprietary
+WHOOP scoring, or clinically validated sensor estimates are introduced. Goals are
+personal targets, not physiological prescriptions. Existing HealthKit, notifications,
+alarm and background-sync capabilities remain subject to iOS signing, permissions,
+firmware and actual hardware. App-store/private server functionality cannot be
+established by repainting its UI. Device-level functionality is not certified by
+these source checks.
+
+Validation: Python branding tests (ordinary text, placeholders, plural forms,
+protected technical/legal strings), personal project generation, generated resource
+and identity checks, documentation-comment lint, UTF-8/directive/delimiter review
+and git diff whitespace checks. Existing analytics/design Swift suites and iOS
+Release compilation remain in the manual GitHub workflow. Hardware verification
+requires the new IPA; no local Windows SwiftUI build or Bluetooth test is claimed.

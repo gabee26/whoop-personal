@@ -12,6 +12,8 @@ jobs:
     timeout-minutes: 60
     steps:
       - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5.1.0
+      - name: Test personal resource branding
+        run: python3 Tools/test_personal_branding.py
       - name: Prepare personal identity
         run: python3 Tools/prepare_personal_whoop.py
       - name: Test analytics and presentation scales

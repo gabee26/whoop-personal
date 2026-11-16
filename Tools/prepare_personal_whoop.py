@@ -3,6 +3,7 @@ from pathlib import Path
 import hashlib
 import json
 import re
+from personal_branding import personal_catalog
 
 ROOT = Path(__file__).resolve().parents[1]
 PREFIX = "com.gabriel.whooppersonal"
@@ -24,9 +25,17 @@ def main():
         block = match.group().replace("CFBundleDisplayName: NOOP", "CFBundleDisplayName: WHOOP")
         block = block.replace("CFBundleName: NOOP", "CFBundleName: WHOOP")
         block = block.replace('"NOOP ', '"WHOOP ')
+        if target == "NOOPiOS":
+            block = block.replace('- "Resources/Info.plist"', '- "Resources/Info.plist"\n          - "Resources/Localizable.xcstrings"', 1)
+            block = block.replace("UILaunchScreen: {}", "UILaunchScreen: {UIColorName: PersonalLaunchBackground}")
         block = block.replace("CFBundleURLSchemes: [noop]", "CFBundleURLSchemes: [personal-whoop-personal]")
         generated = generated[:match.start()] + block + generated[match.end():]
     generated += "\nschemes:" + schemes
+    catalog = json.loads((ROOT / "Strand/Resources/Localizable.xcstrings").read_text(encoding="utf-8"))
+    generated_resources = ROOT / "StrandiOS/Resources/PersonalGenerated"
+    generated_resources.mkdir(parents=True, exist_ok=True)
+    (generated_resources / "Localizable.xcstrings").write_text(
+        json.dumps(personal_catalog(catalog), ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
     output = ROOT / "project.personal-whoop.generated.yml"
     output.write_text(generated, encoding="utf-8")
     manifest = {

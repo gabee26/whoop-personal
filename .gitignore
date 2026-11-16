@@ -122,3 +122,6 @@ tools/linux-capture/captures/
 # Personal WHOOP build outputs; regenerate with Tools/prepare_personal_whoop.py.
 /project.personal-whoop.generated.yml
 /personal-whoop-build-manifest.generated.json
+
+# Generated personal iOS localization overrides (upstream catalog remains unchanged).
+StrandiOS/Resources/PersonalGenerated/

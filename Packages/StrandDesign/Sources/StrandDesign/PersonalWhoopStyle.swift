@@ -2,9 +2,9 @@ import SwiftUI
 
 /// Shared visual tokens for the personal iPhone presentation, based on user references.
 public enum PersonalWhoopStyle {
-    public static let top = Color(hex: "263238")
-    public static let bottom = Color(hex: "0D1215")
-    public static let card = Color(hex: "2B3135")
+    public static let top = Color(hex: "182536")
+    public static let bottom = Color(hex: "080E18")
+    public static let card = Color(hex: "202D3E")
     public static let inset = Color(hex: "202629")
     public static let track = Color(hex: "394247")
     public static let text = Color(hex: "F8FAFB")
@@ -19,7 +19,11 @@ public enum PersonalWhoopStyle {
     public static let margin: CGFloat = 16
     public static let gap: CGFloat = 12
     public static let section: CGFloat = 30
-    public static let radius: CGFloat = 14
+    public static let radius: CGFloat = 22
+    public static let glassStroke: CGFloat = 0.75
+    public static let glassShadow: CGFloat = 16
+    public static let glassHighlight = Color.white.opacity(0.22)
+    public static let glassShade = Color.black.opacity(0.16)
     public static let dockHeight: CGFloat = 66
     public static let ringWidth: CGFloat = 6
     public static let detailRingSize: CGFloat = 180
@@ -40,13 +44,33 @@ public enum PersonalWhoopStyle {
     }
 }
 
+/// One material per surface; accessibility preferences remove transparency without hiding content.
+public struct PersonalGlassSurface: View {
+    public var radius: CGFloat
+    @Environment(\.accessibilityReduceTransparency) private var reduceTransparency
+    @Environment(\.colorSchemeContrast) private var contrast
+    public init(radius: CGFloat = PersonalWhoopStyle.radius) { self.radius = radius }
+    public var body: some View {
+        let shape = RoundedRectangle(cornerRadius: radius, style: .continuous)
+        ZStack {
+            if reduceTransparency || contrast == .increased {
+                shape.fill(PersonalWhoopStyle.card)
+            } else {
+                shape.fill(.ultraThinMaterial)
+                shape.fill(LinearGradient(colors: [PersonalWhoopStyle.card.opacity(0.7), PersonalWhoopStyle.top.opacity(0.4)], startPoint: .topLeading, endPoint: .bottomTrailing))
+            }
+            shape.strokeBorder(LinearGradient(colors: [PersonalWhoopStyle.glassHighlight, .white.opacity(0.04)], startPoint: .topLeading, endPoint: .bottomTrailing), lineWidth: PersonalWhoopStyle.glassStroke)
+        }.shadow(color: PersonalWhoopStyle.glassShade, radius: PersonalWhoopStyle.glassShadow, y: 6)
+    }
+}
+
 public struct PersonalWhoopCard<Content: View>: View {
     private let content: Content
     public init(@ViewBuilder content: () -> Content) { self.content = content() }
     public var body: some View {
         content.frame(maxWidth: .infinity, alignment: .leading)
             .padding(PersonalWhoopStyle.margin)
-            .background(PersonalWhoopStyle.card, in: RoundedRectangle(cornerRadius: PersonalWhoopStyle.radius))
+            .background(PersonalGlassSurface())
     }
 }
 
@@ -95,17 +119,16 @@ public struct PersonalWhoopDock: View {
             HStack(spacing: 0) {
                 item(0, "Início", "house")
                 item(1, "Saúde", "heart.text.square")
-                item(2, "Humans", "person.3")
+                item(2, "Plano", "checkmark.circle")
                 item(4, "Mais", "line.3.horizontal")
             }.frame(maxWidth: .infinity)
-                .background(PersonalWhoopStyle.top.opacity(0.97), in: Capsule())
-                .overlay(Capsule().stroke(PersonalWhoopStyle.track, lineWidth: 1))
+                .background(PersonalGlassSurface(radius: PersonalWhoopStyle.dockHeight / 2))
             Button(action: coach) {
                 Text("W").font(PersonalWhoopStyle.wordmark)
                     .frame(width: 35, height: 35)
                     .overlay(Circle().stroke(LinearGradient(colors: [PersonalWhoopStyle.purple, PersonalWhoopStyle.effort], startPoint: .topLeading, endPoint: .bottomTrailing), lineWidth: 1.5))
                     .frame(width: PersonalWhoopStyle.dockHeight, height: PersonalWhoopStyle.dockHeight)
-                    .background(PersonalWhoopStyle.top, in: RoundedRectangle(cornerRadius: 25))
+                    .background(PersonalGlassSurface())
             }.disabled(!coachEnabled).opacity(coachEnabled ? 1 : 0.4)
                 .accessibilityLabel(coachEnabled ? "Abrir Coach" : "Coach desativado nas definições")
         }.foregroundStyle(PersonalWhoopStyle.text).buttonStyle(.plain)

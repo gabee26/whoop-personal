@@ -131,9 +131,26 @@ struct PersonalLiveScreen: View {
                     VStack(alignment: .leading, spacing: S.margin) {
                         Text("ATIVIDADE EM CURSO").font(S.label)
                         Text(session.sport).font(S.heading)
-                        Text(session.start, style: .timer).font(S.number).monospacedDigit()
+                        TimelineView(.periodic(from: .now, by: 1)) { tick in
+                            Text(ActiveWorkoutIndicatorModel.elapsed(since: session.start, pausedAt: session.pausedAt,
+                                pausedDuration: session.pausedDuration, now: tick.date)).font(S.number).monospacedDigit()
+                        }
+                        Text(session.isPaused ? "EM PAUSA" : "A GRAVAR").font(S.label).foregroundStyle(session.isPaused ? S.yellow : S.green)
+                        HStack {
+                            VStack(alignment: .leading, spacing: S.gap) {
+                                Text("FC MÉDIA").font(S.label).foregroundStyle(S.secondary)
+                                Text(session.samples.isEmpty ? "--" : "\(session.avgHr) bpm").font(S.body)
+                            }
+                            Spacer()
+                            VStack(alignment: .trailing, spacing: S.gap) {
+                                Text("ESFORÇO").font(S.label).foregroundStyle(S.secondary)
+                                Text(session.samples.isEmpty ? "--" : PersonalMetricScale.effort(session.liveStrain).map { String(format: "%.1f / 21", $0) } ?? "--").font(S.body)
+                            }
+                        }
+                        if !live.connected { Text("Ligação interrompida. Os intervalos sem medições não são preenchidos com dados fictícios.").font(S.label).foregroundStyle(S.yellow) }
                     }
                 }
+                PersonalAction(title: session.isPaused ? "RETOMAR ATIVIDADE" : "PAUSAR ATIVIDADE", icon: session.isPaused ? "play.circle" : "pause.circle") { model.toggleWorkoutPause() }
                 PersonalAction(title: "TERMINAR ATIVIDADE", icon: "stop.circle") { ending = true }
             } else {
                 PersonalWhoopCard {
@@ -149,6 +166,9 @@ struct PersonalLiveScreen: View {
                 PersonalAction(title: "INICIAR ATIVIDADE", icon: "play.circle") { model.startWorkout(sport: sport) }
                     .disabled(!live.connected)
             }
+            NavigationLink { PersonalWorkoutLog() } label: {
+                PersonalWhoopCard { Label("VER ATIVIDADES GUARDADAS", systemImage: "clock").font(S.label) }
+            }.buttonStyle(.plain)
         }.onAppear { arm() }
             .onChange(of: live.connected) { _, _ in arm() }
             .onChange(of: live.bonded) { _, _ in arm() }
