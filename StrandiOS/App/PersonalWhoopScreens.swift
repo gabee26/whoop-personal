@@ -27,13 +27,13 @@ private struct PersonalDetail: View {
         case .sleep: PersonalMetricDetail(metric: .sleep, initialDayKey: dayKey)
         case .recovery: PersonalMetricDetail(metric: .recovery, initialDayKey: dayKey)
         case .effort: PersonalMetricDetail(metric: .effort, initialDayKey: dayKey)
-        case .health: HealthView()
+        case .health: PersonalHealthHistory()
         case .stress: PersonalActivityStress(mode: .stress)
         case .activities: PersonalActivityStress(mode: .activities, initialDayKey: dayKey)
         case .live: LiveView()
         case .alarm: SmartAlarmView()
         case .settings: PersonalSettingsScreen()
-        case .metrics: MetricExplorerView()
+        case .metrics: PersonalHealthHistory()
         case .plans: InsightsHubView()
         case .devices: PersonalDeviceScreen()
         case .backup: BackupSyncView()
@@ -165,7 +165,7 @@ struct PersonalWhoopHome: View {
             .task(id: "\(dayKey)-\(repo.refreshSeq)") {
                 rest = nil
                 let key = dayKey
-                let points = await repo.series(key: "sleep_performance", source: Repository.whoopSource)
+                let points = await repo.exploreSeries(key: "sleep_performance", source: Repository.whoopSource)
                 guard !Task.isCancelled, key == dayKey else { return }
                 rest = PersonalMetricScale.percentage(points.last(where: { $0.day == key })?.value)
             }

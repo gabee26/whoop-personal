@@ -31,7 +31,7 @@ struct PersonalActivityStress: View {
             .task(id: repo.refreshSeq) {
                 guard mode == .stress else { return }
                 loading = true
-                let points = await repo.series(key: "stress", source: Repository.whoopSource, days: 14)
+                let points = await repo.exploreSeries(key: "stress", source: Repository.whoopSource, days: 14)
                 guard !Task.isCancelled else { return }
                 stress = points.filter { $0.value.isFinite }.sorted { $0.day < $1.day }
                 loading = false

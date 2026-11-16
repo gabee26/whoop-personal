@@ -15,7 +15,7 @@ struct PersonalMetricDetail: View {
     @EnvironmentObject private var repo: Repository
     @State private var selectedKey = ""
     @State private var sleepPoints: [String: Double] = [:]
-    @State private var showAdvanced = false
+    @State private var historyDays = 7
     private typealias S = PersonalWhoopStyle
 
     private var dayKey: String { selectedKey.isEmpty ? (initialDayKey ?? repo.today?.day ?? Repository.localDayKey(Date())) : selectedKey }
@@ -34,14 +34,28 @@ struct PersonalMetricDetail: View {
         case .effort: PersonalMetricScale.effort(day?.strain)
         }
     }
+    private var selectedValue: Double? {
+        metric == .sleep ? PersonalMetricScale.percentage(sleepPoints[dayKey]) : value(row)
+    }
+    private var historyPoints: [(day: String, value: Double)] {
+        if metric == .sleep {
+            let end = formatter.date(from: dayKey) ?? Date()
+            let start = formatter.string(from: Calendar.current.date(byAdding: .day, value: -(historyDays - 1), to: end) ?? end)
+            return sleepPoints.compactMap { key, score in
+                guard key >= start, key <= dayKey, let valid = PersonalMetricScale.percentage(score) else { return nil }
+                return (day: key, value: valid)
+            }.sorted { $0.day < $1.day }
+        }
+        return week.compactMap { day in value(day).map { (day: day.day, value: $0) } }
+    }
     private var explanation: String {
         switch metric {
         case .sleep:
-            "O score local combina duração, eficiência, sono reparador e regularidade. Não é apenas a percentagem da necessidade de sono cumprida. O histórico também pode incluir valores importados; consulta a análise detalhada para verificar a origem."
+            "O score local combina duração, eficiência, sono reparador e regularidade. Não é apenas a percentagem da necessidade de sono cumprida. O histórico também pode incluir valores importados; os valores apresentados seguem a prioridade das fontes do teu histórico."
         case .recovery:
             "O cálculo local compara indicadores como VFC e frequência cardíaca em repouso com a tua referência pessoal. Dados em falta e uma referência ainda curta limitam a interpretação. O histórico pode incluir valores importados."
         case .effort:
-            "O esforço local é calculado a partir da carga cardiovascular. Aqui convertemos a escala NOOP de 0–100 para 0–21, sem alterar o histórico. Esta conversão não torna o algoritmo igual ao da WHOOP. A análise detalhada mantém a escala NOOP."
+            "O esforço local é calculado a partir da carga cardiovascular. Aqui convertemos a escala NOOP de 0–100 para 0–21, sem alterar o histórico. Esta conversão não torna o algoritmo igual ao da WHOOP."
         }
     }
     private var formatter: DateFormatter {
@@ -49,7 +63,7 @@ struct PersonalMetricDetail: View {
     }
     private var week: [DailyMetric] {
         let end = formatter.date(from: dayKey) ?? Date()
-        let start = formatter.string(from: Calendar.current.date(byAdding: .day, value: -6, to: end) ?? end)
+        let start = formatter.string(from: Calendar.current.date(byAdding: .day, value: -(historyDays - 1), to: end) ?? end)
         return repo.days.filter { $0.day >= start && $0.day <= dayKey }.sorted { $0.day < $1.day }
     }
 
@@ -59,9 +73,9 @@ struct PersonalMetricDetail: View {
             ScrollView {
                 VStack(alignment: .leading, spacing: S.section) {
                     dateSelector
-                    PersonalWhoopRing(metric.rawValue, value: value(row), maximum: metric.maximum, color: accent)
+                    PersonalWhoopRing(metric.rawValue, value: selectedValue, maximum: metric.maximum, color: accent)
                         .frame(width: S.detailRingSize).frame(maxWidth: .infinity)
-                    Text(value(row) == nil ? "Sem dados para este dia" : "Indicador do histórico local")
+                    Text(selectedValue == nil ? "Sem dados para este dia" : "Indicador do histórico local")
                         .font(S.body).foregroundStyle(S.secondary).frame(maxWidth: .infinity)
                     details
                     history
@@ -72,11 +86,7 @@ struct PersonalMetricDetail: View {
                                 .font(S.body).foregroundStyle(S.secondary)
                         }
                     }
-                    Button { showAdvanced = true } label: {
-                        PersonalWhoopCard {
-                            HStack { Text("ABRIR ANÁLISE DETALHADA").font(S.label); Spacer(); Image(systemName: "chevron.right") }
-                        }
-                    }
+
                 }.padding(S.margin).padding(.bottom, S.section)
             }.refreshable { await repo.refresh() }
         }.foregroundStyle(S.text).buttonStyle(.plain)
@@ -84,16 +94,9 @@ struct PersonalMetricDetail: View {
             .toolbarBackground(.hidden, for: .navigationBar)
             .task(id: repo.refreshSeq) {
                 guard metric == .sleep else { return }
-                let points = await repo.series(key: "sleep_performance", source: Repository.whoopSource)
+                let points = await repo.exploreSeries(key: "sleep_performance", source: Repository.whoopSource)
                 guard !Task.isCancelled else { return }
                 sleepPoints = Dictionary(points.map { ($0.day, $0.value) }, uniquingKeysWith: { _, last in last })
-            }
-            .sheet(isPresented: $showAdvanced) {
-                NavigationStack {
-                    advanced.toolbar {
-                        ToolbarItem(placement: .topBarTrailing) { Button("Fechar") { showAdvanced = false } }
-                    }
-                }
             }
     }
 
@@ -159,12 +162,17 @@ struct PersonalMetricDetail: View {
     private var history: some View {
         PersonalWhoopCard {
             VStack(alignment: .leading, spacing: S.margin) {
-                Text("ÚLTIMOS 7 DIAS").font(S.label).tracking(1)
-                if week.contains(where: { value($0) != nil }) {
+                Picker("Período", selection: $historyDays) {
+                    Text("7 dias").tag(7)
+                    Text("30 dias").tag(30)
+                    Text("90 dias").tag(90)
+                }.pickerStyle(.segmented)
+                if !historyPoints.isEmpty {
                     Chart {
-                        ForEach(week, id: \.day) { day in
-                            if let score = value(day), score.isFinite {
-                                BarMark(x: .value("Dia", String(day.day.suffix(5))), y: .value(metric.rawValue, score))
+                        ForEach(historyPoints, id: \.day) { point in
+                            let score = point.value
+                            if score.isFinite {
+                                BarMark(x: .value("Dia", String(point.day.suffix(5))), y: .value(metric.rawValue, score))
                                     .foregroundStyle(metric == .recovery ? S.recovery(score) : accent)
                             }
                         }
@@ -174,13 +182,6 @@ struct PersonalMetricDetail: View {
                         .frame(maxWidth: .infinity, minHeight: S.detailChartHeight)
                 }
             }
-        }
-    }
-    @ViewBuilder private var advanced: some View {
-        switch metric {
-        case .sleep: SleepView()
-        case .recovery: TodayView()
-        case .effort: TrendsView()
         }
     }
     private func number(_ value: Double?, _ suffix: String, decimals: Int = 0) -> String {

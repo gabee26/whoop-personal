@@ -79,7 +79,7 @@ struct PersonalTrainingTools: View {
                     tool("Tendências", "chart.xyaxis.line") { TrendsView() }
                     tool("Comparar períodos", "rectangle.split.2x1") { CompareView() }
                     tool("Registos e análises", "books.vertical") { LabBookView() }
-                    tool("Explorar indicadores", "waveform.path.ecg") { MetricExplorerView() }
+                    tool("Explorar indicadores", "waveform.path.ecg") { PersonalHealthHistory() }
                 }.padding(S.margin).padding(.bottom, S.section)
             }
         }.foregroundStyle(S.text)

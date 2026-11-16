@@ -173,3 +173,20 @@ Upstream workflows are preserved under `.github/upstream-workflows` and are
 inactive in this personal repository. Only the manually dispatched personal iPhone
 workflow remains under `.github/workflows`, avoiding unrelated upstream scheduled,
 push, release and maintenance jobs.
+
+## First device feedback: missing sleep ring
+
+The personal home/detail queried imported-only `series(sleep_performance)`.
+This omitted the computed metric series for a locally measured night. Both now use
+`exploreSeries`, which merges imported and computed series with the repository's
+existing priority and daily fallback. The sleep detail reads its score by day key
+even if no matching daily row is available. Its history uses the same day-keyed
+series and supports 7/30/90 days. No source writes or scoring changes.
+
+Sleep/recovery/effort no longer link to the upstream SleepView/TodayView/TrendsView.
+PersonalHealthHistory replaces HealthView and MetricExplorerView in the personal
+primary routes with new 7/30/90-day charts and daily readouts. Advanced operational
+screens (pairing, settings editors, import/export, workout editors, alarm and Coach)
+are still inherited and must be redesigned separately; this pass does not claim
+complete replacement of all NOOP UI. Device confirmation of the sleep fix and a
+new Xcode build are pending.
