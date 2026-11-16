@@ -66,3 +66,14 @@ Local Python branding checks do not substitute for that build.
 On an iPhone, verify save/relaunch/edit/delete, JSON export/restore/cancel, weekly date
 navigation, next-day context, Dynamic Type, airplane-mode history, sync and the existing
 strap alarm. Actual signal quality and recovery accuracy require paired user data.
+
+## User-requested personal app icon
+
+The personal workflow fetches the artwork for WHOOP's App Store entry (933944389) on
+the macOS build runner. It checks the app identity and Apple CDN host, converts the
+asset to opaque 1024x1024 PNG, and replaces both iPhone icon variants before compiling.
+It records the URL and image hashes in the downloadable icon provenance JSON. Failed
+downloads or invalid images fail the build rather than silently retaining the old icon.
+The artwork is WHOOP's; it is fetched only for the explicitly requested personal build.
+Offline unit tests validate selection and image metadata, not the live download or the
+appearance of an installed app. The app remains an unofficial personal implementation.

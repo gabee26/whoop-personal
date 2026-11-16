@@ -26,7 +26,11 @@ jobs:
     steps:
       - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5.1.0
       - name: Test personal resource branding
-        run: python3 Tools/test_personal_branding.py
+        run: |
+          python3 Tools/test_personal_branding.py
+          python3 Tools/test_personal_icon.py
+      - name: Prepare requested personal app icon
+        run: python3 Tools/prepare_personal_icon.py
       - name: Prepare personal identity
         run: python3 Tools/prepare_personal_whoop.py
       - name: Test analytics and presentation scales
@@ -74,6 +78,7 @@ jobs:
           path: |
             build/WHOOP-ios.ipa
             personal-whoop-build-manifest.generated.json
+            build/personal-icon-provenance.json
           if-no-files-found: error
           retention-days: 14
       - name: Save build log

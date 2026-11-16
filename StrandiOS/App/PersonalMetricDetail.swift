@@ -55,7 +55,7 @@ struct PersonalMetricDetail: View {
         case .recovery:
             "O cálculo local compara indicadores como VFC e frequência cardíaca em repouso com a tua referência pessoal. Dados em falta e uma referência ainda curta limitam a interpretação. O histórico pode incluir valores importados."
         case .effort:
-            "O esforço local é calculado a partir da carga cardiovascular. Aqui convertemos a escala NOOP de 0–100 para 0–21, sem alterar o histórico. Esta conversão não torna o algoritmo igual ao da WHOOP."
+            "O esforço local é calculado a partir da carga cardiovascular. Aqui convertemos a escala interna de 0–100 para 0–21, sem alterar o histórico. Esta conversão não torna o algoritmo igual ao da WHOOP."
         }
     }
     private var formatter: DateFormatter {
