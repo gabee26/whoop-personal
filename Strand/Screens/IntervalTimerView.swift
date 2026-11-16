@@ -91,7 +91,16 @@ struct IntervalTimerView: View {
     // MARK: Body
 
     var body: some View {
-        ScreenScaffold(title: "Interval Timer",
+        Group {
+            #if os(iOS)
+            PersonalPage(title: "INTERVALOS") {
+            stageCard
+            statusRow
+            PersonalSection(title: "PREPARAR TREINO", icon: "timer") { configCard }
+            PersonalSection(title: "SEQUÊNCIA", icon: "list.number") { overviewCard }
+            }
+            #else
+            ScreenScaffold(title: "Interval Timer",
                        subtitle: "Silent haptic HIIT: the strap buzzes the transitions") {
             VStack(alignment: .leading, spacing: NoopMetrics.sectionSpacing) {
                 let cards: [AnyView] = [
@@ -104,6 +113,8 @@ struct IntervalTimerView: View {
                     card.staggeredAppear(index: index)
                 }
             }
+        }
+            #endif
         }
         .onReceive(ticker) { _ in tick() }
         .onChangeCompat(of: workSeconds) { _ in if !running { resetToStart() } }

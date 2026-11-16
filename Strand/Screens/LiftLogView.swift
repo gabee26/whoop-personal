@@ -39,7 +39,16 @@ struct LiftLogView: View {
     private var unitSystem: UnitSystem { UnitSystem(rawValue: unitSystemRaw) ?? .metric }
 
     var body: some View {
-        ScreenScaffold(
+        Group {
+            #if os(iOS)
+            PersonalPage(title: "TREINO DE FORÇA") {
+            PersonalSection(title: "OS MEUS PROGRAMAS", icon: "dumbbell") { programsSection }
+            PersonalSection(title: "ESTA SEMANA", icon: "calendar") { weekSection }
+            PersonalSection(title: "SESSÕES", icon: "clock") { historySection }
+            headerCard
+            }
+            #else
+            ScreenScaffold(
             title: "Lift Log",
             subtitle: "Build a program once, then tap through it at the gym. Kept on \(Platform.deviceNounPhrase).",
             onRefresh: { await load() }
@@ -50,6 +59,8 @@ struct LiftLogView: View {
                 weekSection
                 historySection
             }
+        }
+            #endif
         }
         // Also on a saved session: the session sheet lives above this screen and cannot tell it
         // directly, and a save does not always bump `refreshSeq`.

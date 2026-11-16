@@ -38,7 +38,22 @@ struct InsightsHubView: View {
     @State private var outcome: InsightsHubViewModel.Outcome = .recovery
 
     var body: some View {
-        ScreenScaffold(title: "Insights",
+        Group {
+            #if os(iOS)
+            PersonalPage(title: "O MEU PLANO") {
+            if !model.loaded { ProgressView("A analisar os teus registos…") }
+            else {
+                PersonalWhoopCard {
+                    Text("Descobre que hábitos acompanham mudanças nos teus indicadores. As associações não demonstram causa.")
+                        .font(PersonalWhoopStyle.body).foregroundStyle(PersonalWhoopStyle.secondary)
+                }
+                PersonalSection(title: "HÁBITOS E RESULTADOS", icon: "chart.bar") { moversSection }
+                PersonalSection(title: "DOSE E RESPOSTA", icon: "slider.horizontal.3") { doseSection }
+                methodNote
+            }
+            }
+            #else
+            ScreenScaffold(title: "Insights",
                        subtitle: "Patterns in your own data: association, not cause.",
                        // PERF (scroll): lazy column — byte-identical layout (LazyVStack == eager VStack
                        // alignment/spacing/header). The content is one inner eager VStack, so the staggered
@@ -53,6 +68,8 @@ struct InsightsHubView: View {
                     methodNote
                 }
             }
+        }
+            #endif
         }
         .task(id: repo.refreshSeq) { await model.load(repo: repo) }
         .onChangeCompat(of: outcome) { model.rankFor($0) }

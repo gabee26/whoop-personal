@@ -11,10 +11,23 @@ import StrandDesign
 /// this app automatically.
 struct SiriShortcutsSettingsView: View {
     var body: some View {
-        ScreenScaffold(title: "Siri & Shortcuts",
-                       subtitle: "Run NOOP actions hands-free.") {
-            tips
-            shortcutsCard
+        PersonalPage(title: "SIRI E ATALHOS") {
+            PersonalWhoopCard {
+                VStack(alignment: .leading, spacing: PersonalWhoopStyle.margin) {
+                    Text("AÇÕES RÁPIDAS").font(PersonalWhoopStyle.label)
+                    Text("Sincroniza a pulseira, ativa uma vibração ou marca um momento através da Siri e dos Atalhos.").font(PersonalWhoopStyle.body)
+                    SiriTipView(intent: SyncStrapIntent(), isVisible: .constant(true)).siriTipViewStyle(.dark)
+                    SiriTipView(intent: BuzzStrapIntent(), isVisible: .constant(true)).siriTipViewStyle(.dark)
+                    SiriTipView(intent: MarkMomentIntent(), isVisible: .constant(true)).siriTipViewStyle(.dark)
+                }
+            }
+            PersonalWhoopCard {
+                VStack(alignment: .leading, spacing: PersonalWhoopStyle.margin) {
+                    Text("CRIAR UM ATALHO").font(PersonalWhoopStyle.label)
+                    Text("Combina estas ações com as tuas automatizações do iPhone.").font(PersonalWhoopStyle.body)
+                    ShortcutsLink()
+                }
+            }
         }
     }
 

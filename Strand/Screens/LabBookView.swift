@@ -50,7 +50,18 @@ struct LabBookView: View {
     @State private var csvFailed = false
 
     var body: some View {
-        ScreenScaffold(
+        Group {
+            #if os(iOS)
+            PersonalPage(title: "REGISTOS DE SAÚDE") {
+            headerCard
+            if !loaded { ProgressView("A carregar os registos…") }
+            else if markers.isEmpty { emptyState }
+            else { ForEach(orderedCategories, id: \.self) { category in categorySection(category) } }
+            PersonalSection(title: "IMPORTAR REGISTOS", icon: "square.and.arrow.down") { importCard }
+            disclaimerNote
+            }
+            #else
+            ScreenScaffold(
             title: "Lab Book",
             subtitle: "Your bloods, BP and body numbers. Kept private, on \(Platform.deviceNounPhrase).",
             onRefresh: { await load() },
@@ -77,6 +88,8 @@ struct LabBookView: View {
                 }
                 disclaimerNote
             }
+        }
+            #endif
         }
         .task(id: repo.refreshSeq) { await load() }
         .sheet(isPresented: $showingEditor) {

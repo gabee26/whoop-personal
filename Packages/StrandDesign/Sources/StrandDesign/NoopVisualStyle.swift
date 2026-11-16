@@ -81,15 +81,8 @@ public struct NoopPanelSurface: View {
     public var body: some View {
         let shape = RoundedRectangle(cornerRadius: cornerRadius, style: .continuous)
         #if os(iOS)
-        // Scrolling stacks contain many panels. Layered translucent gradients and blurred shadows
-        // multiply their compositing work, so iOS uses one theme-aware fill and a thin tinted rim.
-        // This changes decorative depth only; card geometry and the design-system colors stay the same.
-        shape
-            .fill(NoopVisualStyle.surface)
-            .overlay(shape.strokeBorder(
-                tint?.opacity(0.14) ?? NoopVisualStyle.borderHighlight.opacity(elevated ? 0.9 : 0.65),
-                lineWidth: 0.8
-            ))
+        RoundedRectangle(cornerRadius: PersonalWhoopStyle.radius, style: .continuous)
+            .fill(PersonalWhoopStyle.card)
             .opacity(surfaceOpacity)
         #else
         shape

@@ -73,6 +73,10 @@ struct StressView: View {
     @State private var modelSignature: StressInputs?
 
     var body: some View {
+        Group {
+            #if os(iOS)
+            personalStressContent
+            #else
         ScreenScaffold(title: "Stress", subtitle: "Autonomic load across your waking day",
                        // PERF (scroll): lazy column — byte-identical layout (LazyVStack == eager VStack
                        // alignment/spacing/header). The content is one inner eager VStack, so the staggered
@@ -90,14 +94,70 @@ struct StressView: View {
                 emptyState
             }
         }
+            #endif
+        }
         .onAppear { rebuildModelIfNeeded() }
         .onChangeCompat(of: repo.days) { _ in rebuildModelIfNeeded() }
         .task(id: repo.refreshSeq) { await load() }
     }
 
+    #if os(iOS)
+    private var personalStressContent: some View {
+        PersonalPage(title: "MONITOR DE STRESS") {
+            PersonalWhoopCard {
+                VStack(alignment: .leading, spacing: PersonalWhoopStyle.margin) {
+                    Text("RESUMO DIÁRIO").font(PersonalWhoopStyle.label).tracking(1)
+                    if !loaded { ProgressView("A analisar…") }
+                    else if let model {
+                        Text(String(format: "%.1f", model.score)).font(PersonalWhoopStyle.number)
+                        Text(model.band.title).font(PersonalWhoopStyle.label)
+                        Text(model.explanation).font(PersonalWhoopStyle.body).foregroundStyle(PersonalWhoopStyle.secondary)
+                    } else { Text("SEM DADOS").font(PersonalWhoopStyle.heading) }
+                }
+            }
+            PersonalWhoopCard {
+                VStack(alignment: .leading, spacing: PersonalWhoopStyle.margin) {
+                    Text("AO LONGO DO DIA").font(PersonalWhoopStyle.label).tracking(1)
+                    if let daytime {
+                        if daytime.scored.isEmpty {
+                            Text("Sem medições suficientes para calcular o stress de hoje.")
+                                .font(PersonalWhoopStyle.body).foregroundStyle(PersonalWhoopStyle.secondary)
+                        } else {
+                            DaytimeLoadLine(hours: daytime.timeline)
+                            HStack {
+                                if let first = daytime.timeline.first { Text(hourLabel(first.hour)) }
+                                Spacer()
+                                Text(timelineTrailing(daytime))
+                                Spacer()
+                                if let last = daytime.timeline.last { Text(hourLabel(last.hour)) }
+                            }.font(PersonalWhoopStyle.label).foregroundStyle(PersonalWhoopStyle.secondary)
+                            StressTotalsBar(totals: StressTotals(hours: daytime.hours))
+                        }
+                        Text(daytimeTimelineCaption).font(PersonalWhoopStyle.body).foregroundStyle(PersonalWhoopStyle.secondary)
+                        if let caption = stressActivityMaskedHoursCaption(daytime.activityMaskedHours) {
+                            Text(caption).font(PersonalWhoopStyle.label).foregroundStyle(PersonalWhoopStyle.secondary)
+                        }
+                    } else { ProgressView("A ler as medições de hoje…") }
+                }
+            }
+            NavigationLink { BreathingView() } label: {
+                PersonalWhoopCard { Label("EXERCÍCIO DE RESPIRAÇÃO", systemImage: "wind").font(PersonalWhoopStyle.label) }
+            }.buttonStyle(.plain)
+            if let model {
+                PersonalSection(title: "HISTÓRICO", icon: "chart.xyaxis.line") { trendSection(model) }
+                PersonalSection(title: "INDICADORES", icon: "heart") { tileGrid(model) }
+                if hasAdvancedReadouts {
+                    PersonalSection(title: "ANÁLISE DE VFC", icon: "waveform.path.ecg") { advancedReadoutsCard() }
+                }
+                PersonalSection(title: "SOBRE ESTA ESTIMATIVA", icon: "info.circle") { methodologyCard(model) }
+            }
+        }
+    }
+    #endif
+
     private func load() async {
         guard let series = await StressLoadCancellation.read({
-            await repo.series(key: "stress", source: "my-whoop")
+            await repo.exploreSeries(key: "stress", source: Repository.whoopSource)
         }) else { return }
         storedSeries = series
         loaded = true

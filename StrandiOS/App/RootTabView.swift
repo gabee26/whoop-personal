@@ -4,7 +4,7 @@ import StrandDesign
 
 /// iOS navigation shell. macOS uses a `NavigationSplitView` sidebar (`RootView`); on iPhone the
 /// natural analogue is a `TabView` with the most-used screens as tabs and everything else under a
-/// "More" list. Every screen is the same `StrandDesign`-built view the macOS app uses.
+/// "More" list. iPhone routes use the personal presentation and retain shared data services.
 struct RootTabView: View {
     /// #1841: shared with Android by NAME and meaning, not by storage — the two platforms keep their own
     /// stores, exactly as the Clock format setting does.
@@ -332,17 +332,17 @@ struct RootTabView: View {
                 case .labBook: LabBookView()
                 case .fusedRecord: FusedRecordHost()
                 case .rhythm: RhythmHost(onClose: { routedPillar = nil })
-                case .devices: DevicesView()
+                case .devices: PersonalPairingScreen()
                 // .trends is never presented as a pillar sheet on iPhone (it's a primary tab — the
                 // requestedDestination handler switches `selectedTab` instead), but the switch must stay
                 // exhaustive. Fall back to Trends inside the sheet host if it ever arrives here.
                 case .trends: TrendsView()
                 // .activeWorkout routes through the quick-action Live sheet (handled above); this keeps the
                 // switch exhaustive and falls back to Live if it ever reaches the pillar host.
-                case .activeWorkout: LiveView()
+                case .activeWorkout: PersonalLiveScreen()
                 // .liveSession routes to the Today tab (handled above — its Start entry owns the cover);
                 // this keeps the switch exhaustive and falls back to Today if it ever reaches the host.
-                case .liveSession: LiquidTodayView()
+                case .liveSession: PersonalWhoopHome()
                 // .journal opens through the quick-action Journal sheet (handled above); this keeps the
                 // switch exhaustive and falls back to the journal's Insights host if it ever reaches here.
                 case .journal: InsightsView()
@@ -392,9 +392,9 @@ struct RootTabView: View {
             .presentationDetents([.height(344)])
             .presentationDragIndicator(.hidden)
         case .live:
-            quickScreen(LiveView())
+            quickScreen(PersonalLiveScreen())
         case .workout:
-            quickScreen(WorkoutsView())
+            quickScreen(PersonalWorkoutLog())
         case .journal:
             quickScreen(InsightsView())
         case .breathe:
@@ -428,7 +428,7 @@ struct RootTabView: View {
     /// dismisses the dedicated `showDevices` sheet rather than the quick-action item).
     private var devicesScreen: some View {
         NavigationStack {
-            DevicesView()
+            PersonalPairingScreen()
                 .background(StrandPalette.surfaceBase.ignoresSafeArea())
                 .navigationBarTitleDisplayMode(.inline)
                 // #1027: same fix as quickScreen — Devices draws the full-bleed liquid sky, so a transparent
@@ -621,12 +621,12 @@ private enum MoreDestination: Hashable {
         case .intelligence:    IntelligenceView()
         case .coach:           CoachView()
         case .insights:        InsightsView()
-        case .explore:         MetricExplorerView()
+        case .explore:         PersonalMetricBrowser()
         case .compare:         CompareView()
-        case .live:            LiveView()
-        case .workouts:        WorkoutsView()
+        case .live:            PersonalLiveScreen()
+        case .workouts:        PersonalWorkoutLog()
         case .liftLog:         LiftLogView()
-        case .health:          HealthView()
+        case .health:          PersonalWhoopHealth()
         case .labBook:         LabBookView()
         case .stress:          StressView()
         case .breathe:         BreathingView()
@@ -635,7 +635,7 @@ private enum MoreDestination: Hashable {
         case .fusedRecord:     FusedRecordHost()
         case .appleHealth:     AppleHealthView()
         case .miBand:          XiaomiBandView()
-        case .dataSources:     DataSourcesView()
+        case .dataSources:     PersonalImportScreen()
         case .noopLimitations: NoopLimitationsView()
         case .backupSync:      BackupSyncView()
         case .shortcutsExport: ShortcutExportSettingsView()
@@ -644,7 +644,7 @@ private enum MoreDestination: Hashable {
         case .testCentre:      TestCentreView()
         case .siriShortcuts:   SiriShortcutsSettingsView()
         case .powerSaving:     PowerSavingView()
-        case .settings:        SettingsView()
+        case .settings:        PersonalSettingsScreen()
         }
     }
 }

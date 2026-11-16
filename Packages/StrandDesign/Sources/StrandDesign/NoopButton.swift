@@ -61,6 +61,18 @@ struct NoopButtonAppearance {
     let usesPanelSurface: Bool
 
     init(_ kind: NoopButtonKind) {
+        #if os(iOS)
+        switch kind {
+        case .primary:
+            fill = PersonalWhoopStyle.text; label = PersonalWhoopStyle.bottom; border = nil; usesPanelSurface = false
+        case .secondary:
+            fill = PersonalWhoopStyle.inset; label = PersonalWhoopStyle.text; border = nil; usesPanelSurface = false
+        case .tertiary:
+            fill = nil; label = PersonalWhoopStyle.effort; border = nil; usesPanelSurface = false
+        case .destructive:
+            fill = PersonalWhoopStyle.red; label = PersonalWhoopStyle.text; border = nil; usesPanelSurface = false
+        }
+        #else
         switch kind {
         case .primary:
             fill = StrandPalette.accent
@@ -83,6 +95,7 @@ struct NoopButtonAppearance {
             border = nil
             usesPanelSurface = false
         }
+        #endif
     }
 }
 

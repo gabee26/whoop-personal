@@ -84,12 +84,24 @@ struct FullDayChartView: View {
     private var visibleWindow: ClosedRange<Date> { zoomDomain ?? dayBounds }
 
     var body: some View {
+        Group {
+            #if os(iOS)
+            PersonalPage(title: "MEDIÇÕES DO DIA") {
+                dayNav
+                chartCard
+                PersonalSection(title: "INDICADOR", icon: "waveform.path.ecg") { metricPills }
+                PersonalSection(title: "FONTE", icon: "applewatch") { sourcePill }
+                zoomHint
+            }
+            #else
         ScreenScaffold(title: "Deep Timeline", subtitle: "Every second of your day, zoomable.") {
             metricPills
             dayNav
             sourcePill
             chartCard
             zoomHint
+        }
+            #endif
         }
         .task(id: taskKey) { await reload() }
         .task(id: annotationKey) { await reloadAnnotations() }

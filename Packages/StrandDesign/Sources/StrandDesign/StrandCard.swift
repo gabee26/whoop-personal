@@ -77,11 +77,15 @@ public struct StrandCard<Content: View>: View {
     }
 
     public var body: some View {
+        #if os(iOS)
+        PersonalWhoopCard { content() }
+        #else
         content()
             .padding(padding)
             .frame(maxWidth: .infinity, alignment: .leading)
             .frostedCardSurface(tint: tint, cornerRadius: cornerRadius)
             .strandCardHover(cornerRadius: cornerRadius)
+            #endif
     }
 }
 

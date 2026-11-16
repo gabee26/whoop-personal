@@ -179,7 +179,21 @@ private struct BreathingContent: View {
     }
 
     var body: some View {
-        ScreenScaffold(title: "Breathe",
+        Group {
+            #if os(iOS)
+            PersonalPage(title: "RESPIRAÇÃO") {
+            modeSwitch
+            switch mode {
+            case .breathe: breatheMode
+            case .resonance: ResonanceModeView(controller: controller, live: live, lockedBpm: lockedBpm)
+            case .calm: CalmModeView(controller: controller, live: live, model: model)
+            }
+            PersonalSection(title: "CHECK-IN", icon: "heart") {
+                StressCheckInCard(center: nudgeCenter) { startOneMinuteCue() }
+            }
+            }
+            #else
+            ScreenScaffold(title: "Breathe",
                        subtitle: "Haptic-paced breathing · find your pace · calm down",
                        // Liquid finish: the same full-bleed day-of-sky backdrop Today + the other liquid
                        // tabs carry, so Breathe sits in one atmosphere.
@@ -193,6 +207,8 @@ private struct BreathingContent: View {
             case .resonance: ResonanceModeView(controller: controller, live: live, lockedBpm: lockedBpm)
             case .calm:      CalmModeView(controller: controller, live: live, model: model)
             }
+        }
+            #endif
         }
         .onReceive(phaseTimer) { now in
             guard running else { return }

@@ -209,7 +209,27 @@ struct InsightsView: View {
     @State private var currentDayKey = Repository.localDayKey(Date())
 
     var body: some View {
-        ScreenScaffold(title: "Insights", subtitle: "Interrogate what affects what.",
+        Group {
+            #if os(iOS)
+            PersonalPage(title: "DIÁRIO") {
+            if !loaded { ProgressView("A carregar o diário…") }
+            else {
+                JournalLogCard(importedQuestions: importedQuestions, answers: dayAnswers,
+                               numericAnswers: dayNumeric, dayOffset: $journalDayOffset,
+                               onChanged: { Task { await load() } })
+                PersonalSection(title: "COMO TE SENTES", icon: "heart.text.square") { MindSection() }
+                PersonalSection(title: "CAFEÍNA", icon: "cup.and.saucer") { CaffeineLogCard() }
+                PersonalSection(title: "EXPERIÊNCIAS", icon: "checkmark.circle") { experimentSection }
+                PersonalSection(title: "OS TEUS PADRÕES", icon: "chart.bar") {
+                    whatMovesYouLink
+                    if !behaviours.isEmpty { behaviourSection }
+                    activityCostSection
+                    relationshipsSection
+                }
+            }
+            }
+            #else
+            ScreenScaffold(title: "Insights", subtitle: "Interrogate what affects what.",
                        // PERF (scroll): lazy column, byte-identical layout (LazyVStack == eager VStack
                        // alignment/spacing/header). The content is one inner eager VStack, so any nested
                        // staggered reveals are unchanged; this only defers building that stack on scroll-in.
@@ -257,6 +277,8 @@ struct InsightsView: View {
                     relationshipsSection
                 }
             }
+        }
+            #endif
         }
         // #860 item 4: key on the data-refresh seq AND today's day-key, so the journal re-loads both on a
         // data change and the moment the calendar day rolls over (driven by the foreground/appear refresh

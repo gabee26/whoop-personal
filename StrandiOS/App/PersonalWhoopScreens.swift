@@ -30,7 +30,7 @@ private struct PersonalDetail: View {
         case .health: PersonalHealthHistory()
         case .stress: PersonalActivityStress(mode: .stress)
         case .activities: PersonalActivityStress(mode: .activities, initialDayKey: dayKey)
-        case .live: LiveView()
+        case .live: PersonalLiveScreen()
         case .alarm: SmartAlarmView()
         case .settings: PersonalSettingsScreen()
         case .metrics: PersonalHealthHistory()
@@ -41,7 +41,7 @@ private struct PersonalDetail: View {
         case .intelligence: IntelligenceView()
         case .comparison: PersonalComparisonScreen()
         case .tools: PersonalTrainingTools()
-        case .sources: DataSourcesView()
+        case .sources: PersonalImportScreen()
         }
     }
 }
@@ -357,7 +357,7 @@ struct PersonalDeviceScreen: View {
             }.padding(W.margin)
             }
         }.foregroundStyle(W.text).buttonStyle(.plain)
-            .sheet(isPresented: $showManager) { NavigationStack { DevicesView().toolbar { ToolbarItem(placement: .topBarTrailing) { Button("Fechar") { showManager = false } } } } }
+            .sheet(isPresented: $showManager) { NavigationStack { PersonalPairingScreen().toolbar { ToolbarItem(placement: .topBarTrailing) { Button("Fechar") { showManager = false } } } } }
     }
 }
 

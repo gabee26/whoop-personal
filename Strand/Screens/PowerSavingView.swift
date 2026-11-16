@@ -21,7 +21,30 @@ struct PowerSavingView: View {
     @AppStorage(PuffinExperiment.lowRefreshKey) private var lowRefreshEnabled = false
 
     var body: some View {
-        ScreenScaffold(title: "Power saving",
+        Group {
+            #if os(iOS)
+            PersonalPage(title: "POUPAR BATERIA") {
+            PersonalWhoopCard {
+                VStack(alignment: .leading, spacing: PersonalWhoopStyle.section) {
+                    Text("SINCRONIZAÇÃO").font(PersonalWhoopStyle.label)
+                    Toggle("Modo de poupança", isOn: $powerSavingEnabled)
+                        .onChange(of: powerSavingEnabled) { _, _ in model.applyPowerSaving() }
+                    if powerSavingEnabled {
+                        Text("Ativar abaixo de \(powerSavingPct)%").font(PersonalWhoopStyle.heading)
+                        Slider(value: Binding(get: { Double(powerSavingPct) }, set: { powerSavingPct = Int($0) }),
+                               in: 10...35, step: 5, onEditingChanged: { if !$0 { model.applyPowerSaving() } })
+                        Toggle("Pausar captura contínua de VFC", isOn: Binding(get: { !pauseHrvDisabled }, set: { pauseHrvDisabled = !$0 }))
+                            .onChange(of: pauseHrvDisabled) { _, _ in model.applyPowerSaving() }
+                        Toggle("Reduzir sincronização em segundo plano", isOn: $lowRefreshEnabled)
+                            .onChange(of: lowRefreshEnabled) { _, _ in model.applyPowerSaving() }
+                    }
+                }.tint(PersonalWhoopStyle.green)
+            }
+            Text("Estas opções alteram a frequência de comunicação com a pulseira. A quantidade de histórico disponível depende do modelo e do tempo entre sincronizações.")
+                .font(PersonalWhoopStyle.body).foregroundStyle(PersonalWhoopStyle.secondary)
+            }
+            #else
+            ScreenScaffold(title: "Power saving",
                        subtitle: "Ease the load on your strap when its battery is running low.") {
             VStack(alignment: .leading, spacing: NoopMetrics.sectionSpacing) {
                 NoopCard {
@@ -100,6 +123,8 @@ struct PowerSavingView: View {
                     }
                 }
             }
+        }
+            #endif
         }
     }
 

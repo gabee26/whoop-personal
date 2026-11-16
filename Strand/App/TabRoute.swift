@@ -43,6 +43,26 @@ extension View {
     /// Today detail pane and TrendsView's own macOS wrap).
     func tabRouteDestinations() -> some View {
         navigationDestination(for: TabRoute.self) { route in
+            #if os(iOS)
+            switch route {
+            case .fullDayChart: FullDayChartView()
+            case .metric(let key):
+                if key == "sleep_performance" { PersonalMetricDetail(metric: .sleep, initialDayKey: nil) }
+                else if let metric = MetricCatalog.all.first(where: { $0.key == key }) { PersonalSeriesDetail(metric: metric) }
+                else { PersonalMetricBrowser() }
+            case .metricSourced(let key, let source):
+                if let metric = MetricCatalog.metric(key: key, source: source) { PersonalSeriesDetail(metric: metric) }
+                else { PersonalMetricBrowser() }
+            case .metricExplorer: PersonalMetricBrowser()
+            case .workouts: PersonalWorkoutLog()
+            case .dataSources: PersonalImportScreen()
+            case .stress: StressView()
+            case .sleep: PersonalMetricDetail(metric: .sleep, initialDayKey: nil)
+            case .health: PersonalWhoopHealth()
+            case .hydration: HydrationView()
+            case .coupled: CoupledView()
+            }
+            #else
             switch route {
             case .fullDayChart: FullDayChartView()
             case .metric(let key):
@@ -72,6 +92,8 @@ extension View {
             case .hydration: HydrationView()
             case .coupled: CoupledView()
             }
+            #endif
+
         }
     }
 }

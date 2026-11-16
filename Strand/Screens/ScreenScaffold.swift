@@ -49,7 +49,7 @@ struct ScreenScaffold<Content: View, Trailing: View>: View {
             // Unified side margins matching the floating navigation bar so every page's cards + header line up
             // to the same edges (2026-07-02); macOS keeps the classic 28 in the #else branch.
             .padding(.horizontal, NoopMetrics.screenHPadding)
-            .padding(.top, 24)
+            .padding(.top, PersonalWhoopStyle.margin)
             // The tab bar floats over the scroll content, so the last card sat hidden behind it.
             // Reserve extra bottom scroll room so every screen's final card clears the floating bar.
             .padding(.bottom, NoopMetrics.tabBarClearance)
@@ -106,19 +106,37 @@ struct ScreenScaffold<Content: View, Trailing: View>: View {
     /// the previous layout. `@ViewBuilder` lets the two stack types resolve to one opaque return.
     @ViewBuilder private var column: some View {
         if lazy {
-            LazyVStack(alignment: .leading, spacing: 20) {
+            LazyVStack(alignment: .leading, spacing: NoopMetrics.sectionGap) {
                 if title != nil || subtitle != nil { header }
                 content()
             }
         } else {
-            VStack(alignment: .leading, spacing: 20) {
+            VStack(alignment: .leading, spacing: NoopMetrics.sectionGap) {
                 if title != nil || subtitle != nil { header }
                 content()
             }
         }
     }
 
-    private var header: some View {
+    @ViewBuilder private var header: some View {
+        #if os(iOS)
+        VStack(spacing: PersonalWhoopStyle.margin) {
+            HStack {
+                Spacer(minLength: 0)
+                if let title {
+                    Text(title).textCase(.uppercase).font(PersonalWhoopStyle.label).tracking(1)
+                        .multilineTextAlignment(.center)
+                }
+                Spacer(minLength: 0)
+                trailing()
+            }
+            if let subtitle {
+                Text(subtitle).font(PersonalWhoopStyle.body).foregroundStyle(PersonalWhoopStyle.secondary)
+                    .frame(maxWidth: .infinity, alignment: .leading)
+            }
+        }.foregroundStyle(PersonalWhoopStyle.text)
+        #else
+
         HStack(alignment: .center, spacing: 12) {
             VStack(alignment: .leading, spacing: 2) {
                 if let title {
@@ -137,7 +155,9 @@ struct ScreenScaffold<Content: View, Trailing: View>: View {
             Spacer(minLength: 0)
             trailing()
         }
+            #endif
     }
+
 }
 
 extension ScreenScaffold where Trailing == EmptyView {

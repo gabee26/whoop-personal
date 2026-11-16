@@ -10,9 +10,17 @@ struct ShortcutExportSettingsView: View {
     @AppStorage(ShortcutHealthExport.enabledKey) private var enabled = false
 
     var body: some View {
-        ScreenScaffold(title: "Shortcuts Export",
-                       subtitle: "Strap data into Apple Health without HealthKit, for sideloaded installs.") {
-            exportCard
+        PersonalPage(title: "EXPORTAR PARA ATALHOS") {
+            PersonalWhoopCard {
+                VStack(alignment: .leading, spacing: PersonalWhoopStyle.section) {
+                    Image(systemName: "square.and.arrow.up").font(PersonalWhoopStyle.number)
+                    Toggle("Exportação para a Saúde da Apple", isOn: $enabled).tint(PersonalWhoopStyle.green)
+                    Text("Quando ativa, a aplicação atualiza o ficheiro noop_sync.txt ao passar para segundo plano. Um atalho pode ler esse ficheiro e registar as medições na Saúde da Apple.")
+                        .font(PersonalWhoopStyle.body).foregroundStyle(PersonalWhoopStyle.secondary)
+                    Text("O nome técnico do ficheiro mantém-se para preservar a compatibilidade com os atalhos existentes.")
+                        .font(PersonalWhoopStyle.label).foregroundStyle(PersonalWhoopStyle.secondary)
+                }
+            }
         }
     }
 

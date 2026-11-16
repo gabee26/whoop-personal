@@ -140,6 +140,9 @@ public struct NoopCard<Content: View>: View {
         self.padding = padding; self.tint = tint; self.content = content
     }
     public var body: some View {
+        #if os(iOS)
+        PersonalWhoopCard { content() }
+        #else
         content()
             .padding(padding)
             .frame(maxWidth: .infinity, alignment: .leading)
@@ -150,6 +153,7 @@ public struct NoopCard<Content: View>: View {
         #if os(macOS)
             .onHover { hover = $0 }
         #endif
+            #endif
     }
 
     // Touch can't hover, so iOS renders only the static resting frosted surface — no

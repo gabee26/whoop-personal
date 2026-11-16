@@ -58,38 +58,7 @@ struct CoachView: View {
     private var suggestions: [String] { coach.suggestions }
 
     var body: some View {
-        ScreenScaffold(title: "Coach",
-                       subtitle: "Ask about your charge, effort, rest and workouts, grounded in your own numbers.",
-                       // Liquid finish: the same full-bleed day-of-sky backdrop Today + the other liquid
-                       // tabs carry, so Coach sits in one atmosphere. Static + non-interactive; the frosted
-                       // message/setup cards below sit on the opaque canvas and stay legible.
-                       topBackground: liquidScaffoldSky()) {
-            if coach.isConfigured {
-                connectedHeader
-                transcript
-                if let error = coach.errorText, !error.isEmpty {
-                    errorBanner(error)
-                }
-                if coach.keyRejected || showKeyEditor { keyRepairPanel }
-                // K7: show follow-up chips after each assistant reply (when the transcript is
-                // non-empty and the last message is from the assistant and not mid-send);
-                // otherwise show the initial contextual chips.
-                if showFollowUpChips {
-                    followUpChips
-                } else {
-                    suggestionChips
-                }
-                composer
-                // K12: show a rough token estimate when the draft is non-empty.
-                if !draft.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty,
-                   let tokens = coach.estimatedTokens(forDraft: draft) {
-                    tokenEstimateBar(tokens)
-                }
-                privacyFootnote
-            } else {
-                setupCard
-            }
-        }
+        coachLayout
         // macOS only. On iOS these actions live in `connectionMenu` instead, because this bar is hidden for
         // a primary tab root and VISIBLE in the pillar sheet, so leaving them here would render nothing
         // on the Coach tab and a duplicate of the menu in the sheet. One control per platform, reachable
@@ -392,6 +361,96 @@ struct CoachView: View {
     }
 
     // MARK: - Connected state
+
+    @ViewBuilder private var coachLayout: some View {
+        #if os(iOS)
+        ZStack {
+            PersonalWhoopStyle.background.ignoresSafeArea()
+            VStack(spacing: PersonalWhoopStyle.margin) {
+                HStack {
+                    Text("WHOOP COACH").font(PersonalWhoopStyle.label).tracking(1)
+                    Spacer()
+                    if coach.isConfigured { connectionMenu }
+                    Button { showSettings = true } label: { Image(systemName: "slider.horizontal.3") }
+                        .accessibilityLabel("Definições do Coach")
+                }.padding(PersonalWhoopStyle.margin)
+                ScrollViewReader { proxy in
+                    ScrollView {
+                        LazyVStack(alignment: .leading, spacing: PersonalWhoopStyle.margin) {
+                            if !coach.isConfigured { setupCard }
+                            else {
+                                if coach.messages.isEmpty {
+                                    Text("Como te sentes hoje?").font(PersonalWhoopStyle.heading)
+                                    suggestionChips
+                                }
+                                ForEach(coach.messages) { message in
+                                    PersonalWhoopCard {
+                                        VStack(alignment: .leading, spacing: PersonalWhoopStyle.gap) {
+                                            Text(message.role == .user ? "TU" : "COACH")
+                                                .font(PersonalWhoopStyle.label).foregroundStyle(PersonalWhoopStyle.secondary)
+                                            Markdown(message.text).font(PersonalWhoopStyle.body).textSelection(.enabled)
+                                        }
+                                    }.id(message.id)
+                                }
+                                if coach.sending { ProgressView("A responder…").id("typing") }
+                                if let error = coach.errorText, !error.isEmpty { errorBanner(error) }
+                                if coach.keyRejected || showKeyEditor { keyRepairPanel }
+                                if showFollowUpChips { followUpChips }
+                                privacyFootnote
+                            }
+                        }.padding(PersonalWhoopStyle.margin)
+                    }.onChange(of: coach.messages.count) { _, _ in scrollToEnd(proxy) }
+                        .onChange(of: coach.sending) { _, _ in scrollToEnd(proxy) }
+                }
+                if coach.isConfigured {
+                    HStack(spacing: PersonalWhoopStyle.gap) {
+                        TextField("Pergunta ao Coach", text: $draft, axis: .vertical)
+                            .lineLimit(1...5).focused($composerFocused).onSubmit { send(draft) }
+                        micButton
+                        Button { send(draft) } label: { Image(systemName: "arrow.up.circle.fill").font(PersonalWhoopStyle.number) }
+                            .disabled(coach.sending || draft.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty)
+                            .accessibilityLabel("Enviar")
+                    }.padding(PersonalWhoopStyle.margin)
+                        .background(PersonalWhoopStyle.inset, in: RoundedRectangle(cornerRadius: PersonalWhoopStyle.radius))
+                        .padding(.horizontal, PersonalWhoopStyle.margin)
+                }
+            }
+        }.foregroundStyle(PersonalWhoopStyle.text)
+        #else
+        ScreenScaffold(title: "Coach",
+                       subtitle: "Ask about your charge, effort, rest and workouts, grounded in your own numbers.",
+                       // Liquid finish: the same full-bleed day-of-sky backdrop Today + the other liquid
+                       // tabs carry, so Coach sits in one atmosphere. Static + non-interactive; the frosted
+                       // message/setup cards below sit on the opaque canvas and stay legible.
+                       topBackground: liquidScaffoldSky()) {
+            if coach.isConfigured {
+                connectedHeader
+                transcript
+                if let error = coach.errorText, !error.isEmpty {
+                    errorBanner(error)
+                }
+                if coach.keyRejected || showKeyEditor { keyRepairPanel }
+                // K7: show follow-up chips after each assistant reply (when the transcript is
+                // non-empty and the last message is from the assistant and not mid-send);
+                // otherwise show the initial contextual chips.
+                if showFollowUpChips {
+                    followUpChips
+                } else {
+                    suggestionChips
+                }
+                composer
+                // K12: show a rough token estimate when the draft is non-empty.
+                if !draft.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty,
+                   let tokens = coach.estimatedTokens(forDraft: draft) {
+                    tokenEstimateBar(tokens)
+                }
+                privacyFootnote
+            } else {
+                setupCard
+            }
+        }
+        #endif
+    }
 
     private var connectedHeader: some View {
         HStack(spacing: 10) {

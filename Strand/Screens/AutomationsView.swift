@@ -48,7 +48,20 @@ struct AutomationsView: View {
     @AppStorage(HapticPrefs.workout) private var workoutHaptic = true
 
     var body: some View {
-        ScreenScaffold(title: "Automations",
+        Group {
+            #if os(iOS)
+            PersonalPage(title: "AUTOMATIZAÇÕES") {
+            PersonalSection(title: "PULSEIRA", icon: "applewatch") {
+                wristAlertsCard
+                doubleTapCard
+                hapticsCard
+                wearCard
+            }
+            PersonalSection(title: "TREINO", icon: "figure.run") { coachingCard; strainTargetCard }
+            PersonalSection(title: "LEMBRETES", icon: "bell") { inactivityCard; illnessCard; healthInsightsCard; batteryCard }
+            }
+            #else
+            ScreenScaffold(title: "Automations",
                        subtitle: "Make the strap do things: tap to act, walk away to lock, train by feel.",
                        // PERF: the cards are direct children of the scaffold column, so the LazyVStack
                        // path (byte-identical layout) genuinely builds the off-screen cards on demand
@@ -69,6 +82,8 @@ struct AutomationsView: View {
             healthInsightsCard
             batteryCard
             strainTargetCard
+        }
+            #endif
         }
     }
 

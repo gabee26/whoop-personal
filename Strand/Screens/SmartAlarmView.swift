@@ -242,6 +242,29 @@ struct SmartAlarmView: View {
     // even if the phone is asleep or NOOP is closed. Lifted verbatim (behaviour intact) out of
     // AutomationsView.alarmCard so users stop conflating it with the wind-down reminder below.
     private var strapAlarmCard: some View {
+        #if os(iOS)
+        PersonalWhoopCard {
+            VStack(alignment: .leading, spacing: PersonalWhoopStyle.section) {
+                Text("ACORDAR").font(PersonalWhoopStyle.label).tracking(1)
+                DatePicker("Hora do alarme", selection: alarmTimeBinding, displayedComponents: .hourAndMinute)
+                    .datePickerStyle(.wheel).labelsHidden()
+                Toggle("Vibração na pulseira", isOn: $behavior.smartAlarmEnabled)
+                    .tint(PersonalWhoopStyle.green)
+                if behavior.smartAlarmEnabled {
+                    alarmWeekdayPicker
+                    if let next = nextStrapAlarmLabel {
+                        Text("Próximo alarme: \(next)").font(PersonalWhoopStyle.body)
+                    }
+                    Text(strapAlarmWillArm ? "O envio do alarme é gerido pela ligação à pulseira. Confirma o funcionamento antes de depender dele." : "O alarme ainda não reúne as condições para ser enviado à pulseira. Verifica a ligação e a compatibilidade do dispositivo.")
+                        .font(PersonalWhoopStyle.label).foregroundStyle(PersonalWhoopStyle.secondary)
+                }
+            }
+        }
+        .onChange(of: behavior.smartAlarmEnabled) { _, _ in model.applySmartAlarm() }
+        .onChange(of: behavior.smartAlarmMinutes) { _, _ in model.applySmartAlarm() }
+        .onChange(of: behavior.smartAlarmWeekdays) { _, _ in model.applySmartAlarm() }
+        #else
+
         StrandCard(padding: 20, tint: behavior.smartAlarmEnabled ? StrandPalette.accent : nil) {
             VStack(alignment: .leading, spacing: 16) {
                 VStack(alignment: .leading, spacing: 2) {
@@ -354,7 +377,8 @@ struct SmartAlarmView: View {
             .onChangeCompat(of: behavior.smartAlarmMinutes) { _ in model.applySmartAlarm() }
             .onChangeCompat(of: behavior.smartAlarmWeekdays) { _ in model.applySmartAlarm() }
         }
-    }
+            #endif
+}
 
     private var windDownCard: some View {
         // Rest-tinted when armed so the active state reads in the sleep world; neutral when off.

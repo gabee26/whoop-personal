@@ -190,3 +190,46 @@ screens (pairing, settings editors, import/export, workout editors, alarm and Co
 are still inherited and must be redesigned separately; this pass does not claim
 complete replacement of all NOOP UI. Device confirmation of the sleep fix and a
 new Xcode build are pending.
+
+
+## Complete presentation pass after device feedback (2026-11-16)
+
+The iPhone shell and quick-action routes now open the personal live, pairing,
+workout, import, health and settings views. TabRoute uses personal metric details
+and preserves explicit metric source identity; the macOS routes remain separate.
+The metric catalogue has its own searchable list and 7/30/90/365-day detail pages.
+The home and sleep detail continue to read the same merged sleep-performance
+series, including locally computed nights, and clear stale values during reloads.
+
+New iOS layouts are implemented in the shared journal, insights, intelligence,
+stress, trends, strength, interval timer, breathing, Apple Health, advanced settings,
+power saving, diagnostics, capability, raw timeline, alarm, backup and Coach views.
+Their existing data loaders, engine state, confirmations and preference keys are
+retained. The operational screens use PersonalPage/PersonalSection and the shared
+card, button, typography and gauge renderers now select the personal design on iOS.
+This also covers secondary cards reached from editors and diagnostic sheets.
+System pickers, permission dialogs, native Siri tips and existing specialist editor
+controls remain native/shared components; this is not a claim that every upstream
+view implementation has been removed or that every screen matches an unseen WHOOP
+reference pixel for pixel. License notices and technical file names are retained.
+
+New pairing/live screens call the existing AppModel methods, with no new Bluetooth
+commands. The live screen owns one realtime-HR reference and releases only that
+reference on exit. Workout sport names come from the canonical catalogue; display
+labels do not rewrite persisted sport names. Workout edit/save/delete use existing
+repository operations; deletion requires confirmation and removes the saved route
+through the same helper used upstream. Import uses the existing as-copy document
+picker and original ZIP importers. The advanced settings entry retains access to
+units, zones, calibration, notifications and experimental controls.
+
+Stress reads the merged metric series rather than imported-only rows, and its
+intraday panel can appear even without a daily stress summary. No analytics weights,
+BLE protocol, storage schema, source identifiers or persisted scale were changed.
+Android does not need formula parity changes for this presentation-only pass.
+
+Validation on the Windows host: UTF-8, delimiter/directive balance, route and symbol
+inspection, `git diff --check`, and documentation-comment lint. These checks do not
+replace Swift type-checking. The new iOS branches still need the macOS-hosted manual
+IPA workflow and a device review, including real night data, pairing/reconnect,
+workout save, backup restoration and Coach configuration. No newly built IPA or
+measured accuracy improvement is claimed by this source revision.

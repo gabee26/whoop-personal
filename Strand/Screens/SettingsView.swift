@@ -253,6 +253,19 @@ struct SettingsView: View {
     @AppStorage(SettingsDisclosureDefaults.advancedOpenKey) private var advancedOpen = SettingsDisclosureDefaults.advancedOpenDefault
 
     var body: some View {
+        Group {
+            #if os(iOS)
+            PersonalPage(title: "PREFERÊNCIAS AVANÇADAS") {
+                PersonalSection(title: "PERFIL E UNIDADES", icon: "person.crop.circle") { profileCard; unitsCard }
+                PersonalSection(title: "PULSEIRA E SINCRONIZAÇÃO", icon: "applewatch") { strapCard; syncCard }
+                PersonalSection(title: "NOTIFICAÇÕES", icon: "bell") { liveNotificationsCard }
+                PersonalSection(title: "FUNCIONALIDADES", icon: "slider.horizontal.3") { featuresCard; streakCard }
+                PersonalSection(title: "CÁLCULOS E CALIBRAÇÃO", icon: "waveform.path.ecg") { recoveryCard; hrvCard }
+                PersonalSection(title: "DIAGNÓSTICO", icon: "stethoscope") { testCentreCard; experimentalCard }
+                PersonalSection(title: "DADOS", icon: "externaldrive") { backupCard }
+                PersonalSection(title: "SOBRE A APLICAÇÃO", icon: "info.circle") { aboutCard }
+            }
+            #else
         ScreenScaffold(title: "Settings",
                        subtitle: "Your numbers, your strap, and how NOOP works. All on \(Platform.deviceNounPhrase).",
                        // The day-of-sky liquid backdrop, matching Today / Health / Sleep / Trends / Devices:
@@ -294,6 +307,8 @@ struct SettingsView: View {
                 // About stays expanded at the foot (version, links and the help sheets people return to).
                 aboutCard.staggeredAppear(index: 7)
             }
+        }
+            #endif
         }
         .alert(backupAlertTitle, isPresented: $showBackupAlert) {
             Button("OK", role: .cancel) { }

@@ -161,6 +161,17 @@ struct TestCentreView: View {
         capture: .toggle, includesScreenshot: false, requires5MG: false)
 
     var body: some View {
+        Group {
+            #if os(iOS)
+            PersonalPage(title: "DIAGNÓSTICO") {
+                PersonalSection(title: "VERIFICAR INDICADORES", icon: "heart.text.square") { domainModesCard }
+                PersonalSection(title: "LIGAÇÃO E REGISTOS", icon: "antenna.radiowaves.left.and.right") { diagnosticToolsCard }
+                if is5MG { rawDataCollectorCard; fiveMGProtocolDiagnosticsCard }
+                if ouraPaired { ouraCard }
+                PersonalSection(title: "EXPORTAR DIAGNÓSTICO", icon: "square.and.arrow.up") { exportCard }
+                PersonalSection(title: "OPÇÕES EXPERIMENTAIS", icon: "flask") { experimentalAlgorithmsCard }
+            }
+            #else
         ScreenScaffold(title: "Test Centre",
                        subtitle: "Turn on a test for the thing that's wrong, wear the strap, then tap Report. All on \(Platform.deviceNounPhrase).") {
             VStack(alignment: .leading, spacing: NoopMetrics.sectionSpacing) {
@@ -172,6 +183,8 @@ struct TestCentreView: View {
                 exportCard.staggeredAppear(index: 2)
                 experimentalAlgorithmsCard.staggeredAppear(index: 3)
             }
+        }
+            #endif
         }
         .id(refreshToken)
         .onAppear {

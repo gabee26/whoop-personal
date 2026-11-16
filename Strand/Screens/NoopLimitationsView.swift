@@ -77,10 +77,30 @@ struct NoopLimitationsView: View {
     ]
 
     var body: some View {
+        #if os(iOS)
+        PersonalPage(title: "CAPACIDADES DA PULSEIRA") {
+            ForEach(rows) { row in
+                PersonalWhoopCard {
+                    VStack(alignment: .leading, spacing: PersonalWhoopStyle.margin) {
+                        Text(row.feature).font(PersonalWhoopStyle.label)
+                        HStack {
+                            Text("WHOOP 4.0").font(PersonalWhoopStyle.body)
+                            supportCell(row.whoop4)
+                            Spacer()
+                            Text("5.0 / MG").font(PersonalWhoopStyle.body)
+                            supportCell(row.whoop5)
+                        }
+                    }
+                }.accessibilityElement(children: .ignore).accessibilityLabel(a11yLabel(row))
+            }
+            legendCard
+        }
+        #else
         ScreenScaffold(title: "NOOP Limitations", subtitle: "What each WHOOP can read") {
             tableCard
             legendCard
         }
+        #endif
     }
 
     // MARK: - Cards

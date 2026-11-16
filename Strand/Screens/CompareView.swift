@@ -171,7 +171,24 @@ struct CompareView: View {
     private var loadTaskID: String { "\(selectionKey)|\(repo.refreshSeq)" }
 
     var body: some View {
-        ScreenScaffold(title: "Compare", subtitle: "Overlay signals, draw conclusions.",
+        Group {
+            #if os(iOS)
+            PersonalPage(title: "COMPARAR INDICADORES") {
+            PersonalSection(title: "ESCOLHER INDICADORES", icon: "slider.horizontal.3") { metricSection }
+            if selected.count < minSelection {
+                PersonalWhoopCard { Text("Seleciona pelo menos dois indicadores com histórico.").font(PersonalWhoopStyle.body) }
+            } else {
+                let series = activeSeries
+                if series.allSatisfy({ $0.rows.isEmpty }) {
+                    PersonalWhoopCard { Text(loadedOnce ? "Sem dados neste período. Alarga o intervalo ou escolhe outros indicadores." : "A carregar histórico…").font(PersonalWhoopStyle.body) }
+                } else {
+                    overlaySection(series)
+                    PersonalSection(title: "RELAÇÃO ENTRE INDICADORES", icon: "point.3.connected.trianglepath.dotted") { correlationSection(series) }
+                }
+            }
+            }
+            #else
+            ScreenScaffold(title: "Compare", subtitle: "Overlay signals, draw conclusions.",
                        // PERF (scroll): lazy column — byte-identical layout (LazyVStack == eager VStack
                        // alignment/spacing/header). The content is one inner eager VStack; no staggered
                        // reveals, and the only GeometryReaders are chart-local (.chartOverlay plot rects),
@@ -197,6 +214,8 @@ struct CompareView: View {
                     }
                 }
             }
+        }
+            #endif
         }
         .task(id: loadTaskID) {
             await loadSelected()

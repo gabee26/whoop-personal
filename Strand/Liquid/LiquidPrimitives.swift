@@ -339,7 +339,18 @@ struct LiquidVessel: View {
     }
 
     var body: some View {
+        #if os(iOS)
+        ZStack {
+            Circle().stroke(PersonalWhoopStyle.track, lineWidth: PersonalWhoopStyle.ringWidth)
+            if let value, value.isFinite, value >= 0, value <= 1 {
+                Circle().trim(from: 0, to: CGFloat(value))
+                    .stroke(tint, style: StrokeStyle(lineWidth: PersonalWhoopStyle.ringWidth, lineCap: .round))
+                    .rotationEffect(.degrees(-90))
+            }
+        }.padding(PersonalWhoopStyle.ringWidth / 2)
+        #else
         if animated && !motion.poseStill(reduceMotion) { gauge } else { staticGauge }
+        #endif
     }
 
     /// The live gauge: the fill eases in from empty and to each new value, then the ring holds still.
@@ -424,7 +435,17 @@ struct LiquidTube: View {
     @State private var sim = LiquidSim(target: 0)
 
     var body: some View {
+        #if os(iOS)
+        GeometryReader { geometry in
+            ZStack(alignment: .leading) {
+                Capsule().fill(PersonalWhoopStyle.track)
+                Capsule().fill(tint)
+                    .frame(width: geometry.size.width * CGFloat(frac.isFinite ? max(0, min(1, frac)) : 0))
+            }
+        }.frame(height: height)
+        #else
         if animated && !motion.poseStill(reduceMotion) { liveTube } else { staticTube }
+        #endif
     }
 
     private var liveTube: some View {

@@ -11,12 +11,12 @@ struct PersonalSettingsScreen: View {
             ScrollView {
                 VStack(alignment: .leading, spacing: S.section) {
                     section("A TUA CONTA LOCAL") {
-                        link("Perfil e preferências", "Dados pessoais, zonas cardíacas e aparência", "person.crop.circle") { SettingsView() }
+                        link("Perfil e preferências", "Data de nascimento, medidas e frequência cardíaca", "person.crop.circle") { PersonalProfileScreen() }
                         link("Dispositivo WHOOP", "Ligação, bateria e sincronização", "applewatch") { PersonalDeviceScreen() }
                         link("Alarme", "Sono e hora de acordar", "alarm") { SmartAlarmView() }
                     }
                     section("DADOS E INTEGRAÇÕES") {
-                        link("Importar histórico", "Fontes de dados e exportação original WHOOP", "square.and.arrow.down") { DataSourcesView() }
+                        link("Importar histórico", "Fontes de dados e exportação original WHOOP", "square.and.arrow.down") { PersonalImportScreen() }
                         link("Cópias de segurança", "Guardar, restaurar e exportar", "externaldrive") { BackupSyncView() }
                         link("Saúde da Apple", "Configurar a integração disponível", "heart") { AppleHealthView() }
                         link("Atalhos e exportação", "Integrações através dos Atalhos", "square.and.arrow.up") { ShortcutExportSettingsView() }
@@ -24,10 +24,11 @@ struct PersonalSettingsScreen: View {
                     }
                     section("PREFERÊNCIAS E SUPORTE") {
                         link("Coach", "Configuração do assistente e fornecedor", "sparkles") { CoachView() }
+                        link("Preferências avançadas", "Unidades, calibração e captura de dados", "slider.horizontal.3") { SettingsView() }
                         link("Poupar bateria", "Preferências de funcionamento", "battery.25") { PowerSavingView() }
                         link("Automatizações", "Regras locais disponíveis", "wand.and.stars") { AutomationsView() }
                         link("Siri e Atalhos", "Ações rápidas no iPhone", "mic") { SiriShortcutsSettingsView() }
-                        link("Diagnóstico", "Estado e ferramentas do NOOP", "stethoscope") { TestCentreView() }
+                        link("Diagnóstico", "Estado da ligação e registos técnicos", "stethoscope") { TestCentreView() }
                         link("Capacidades da pulseira", "Diferenças e limitações dos modelos", "info.circle") { NoopLimitationsView() }
                     }
                     PersonalWhoopCard {
@@ -79,7 +80,7 @@ struct PersonalTrainingTools: View {
                     tool("Tendências", "chart.xyaxis.line") { TrendsView() }
                     tool("Comparar períodos", "rectangle.split.2x1") { CompareView() }
                     tool("Registos e análises", "books.vertical") { LabBookView() }
-                    tool("Explorar indicadores", "waveform.path.ecg") { PersonalHealthHistory() }
+                    tool("Explorar indicadores", "waveform.path.ecg") { PersonalMetricBrowser() }
                 }.padding(S.margin).padding(.bottom, S.section)
             }
         }.foregroundStyle(S.text)

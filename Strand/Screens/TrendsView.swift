@@ -290,6 +290,23 @@ struct TrendsView: View {
     }
 
     private var scaffold: some View {
+        Group {
+            #if os(iOS)
+            PersonalPage(title: "TENDÊNCIAS") {
+                if repo.days.isEmpty {
+                    PersonalWhoopCard { Text(repo.loaded ? "Sem histórico disponível." : "A carregar histórico…").font(PersonalWhoopStyle.body) }
+                } else {
+                    let metrics = resolvedMetrics
+                    rangeBar(recovery: metrics.recovery)
+                    PersonalSection(title: "RECUPERAÇÃO", icon: "arrow.trianglehead.2.clockwise.rotate.90") { heroRecovery(recovery: metrics.recovery) }
+                    PersonalSection(title: "CORAÇÃO E ESFORÇO", icon: "heart") { smallMultiples(hrv: metrics.hrv, rhr: metrics.rhr, strain: metrics.strain) }
+                    PersonalSection(title: "RESUMO SEMANAL", icon: "calendar") { weeklyDigestNav }
+                    PersonalSection(title: "CARGA DE TREINO", icon: "figure.run") { TrainingLoadCard(days: repo.days) }
+                    PersonalSection(title: "O TEU ANO", icon: "calendar.badge.clock") { yearStrip }
+                    exportReportRow
+                }
+            }.refreshable { await repo.refresh() }
+            #else
         ScreenScaffold(title: "Trends", subtitle: "The thread of you over time.",
                        // PERF (scroll): lazy column — byte-identical layout (LazyVStack == eager VStack
                        // alignment/spacing/header). The content is one inner eager VStack, so the staggered
@@ -334,6 +351,8 @@ struct TrendsView: View {
                 }
             }
         }
+            #endif
+        }
         // #436 — present the offline trends-report exporter (range picker + PDF export).
         .sheet(isPresented: $showingReport) {
             TrendsReportSheet(days: repo.days)
@@ -342,7 +361,7 @@ struct TrendsView: View {
         // Rest score uses (not raw efficiency). Mirrors TodayView's restScore read. Keyed on the day
         // count so a newly-banked/-scored night refreshes Rest reactively, like the other metrics that
         // read `repo.days` directly (and like the Android LaunchedEffect(days) twin).
-        .task(id: repo.days.count) {
+        .task(id: repo.refreshSeq) {
             let s = await repo.exploreSeries(key: "sleep_performance", source: "my-whoop")
             sleepPerfByDay = Dictionary(s.map { ($0.day, $0.value) }, uniquingKeysWith: { _, last in last })
             sleepPerfRevision += 1

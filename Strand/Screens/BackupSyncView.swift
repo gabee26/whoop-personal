@@ -27,16 +27,7 @@ struct BackupSyncView: View {
     @State private var confirmRestore = false
 
     var body: some View {
-        ScreenScaffold(
-            title: "Backup & Sync",
-            subtitle: "Save a full backup to a folder you choose - point it at Google Drive, iCloud or Dropbox for off-device sync."
-        ) {
-            VStack(alignment: .leading, spacing: NoopMetrics.sectionGap) {
-                folderCard
-                autoCard
-                restoreCard
-            }
-        }
+        backupLayout
         // Result of a backup or a restore.
         .alert(alertTitle, isPresented: $showAlert) {
             Button("OK", role: .cancel) {}
@@ -59,6 +50,49 @@ struct BackupSyncView: View {
                 ? "Replace all current data with the backup from \(absoluteTime(snap.timeMs))? This cannot be undone."
                 : "Replace all current data with the backup \(snap.name)? This cannot be undone.")
         }
+    }
+
+    @ViewBuilder private var backupLayout: some View {
+        #if os(iOS)
+        PersonalPage(title: "CÓPIAS DE SEGURANÇA") {
+            PersonalWhoopCard {
+                VStack(alignment: .leading, spacing: PersonalWhoopStyle.margin) {
+                    Text("DESTINO").font(PersonalWhoopStyle.label)
+                    Text(folderLabel ?? "Escolhe onde guardar as tuas cópias").font(PersonalWhoopStyle.body)
+                    Text(lastMs > 0 ? "Última cópia: \(absoluteTime(lastMs))" : "Ainda não foi criada uma cópia.")
+                        .font(PersonalWhoopStyle.label).foregroundStyle(PersonalWhoopStyle.secondary)
+                }
+            }
+            PersonalAction(title: "ESCOLHER PASTA", icon: "folder") { chooseFolder() }.disabled(busy)
+            PersonalAction(title: "USAR PASTA DA APLICAÇÃO", icon: "iphone") { useNoopFolder() }.disabled(busy)
+            PersonalAction(title: "CRIAR CÓPIA AGORA", icon: "externaldrive") { backupNow() }
+                .disabled(busy || folderLabel == nil)
+            PersonalWhoopCard {
+                VStack(spacing: PersonalWhoopStyle.margin) {
+                    Toggle("Cópia automática diária", isOn: $auto)
+                        .onChange(of: auto) { _, value in FolderBackup.autoEnabled = value }
+                    Stepper("Manter \(keep) cópias", value: $keep, in: 1...30)
+                        .onChange(of: keep) { _, value in FolderBackup.keepCount = value }
+                    Text("A cópia automática é verificada ao abrir a aplicação. Ao criar novas cópias, as mais antigas podem ser removidas segundo este limite.")
+                        .font(PersonalWhoopStyle.label).foregroundStyle(PersonalWhoopStyle.secondary)
+                }
+            }.disabled(busy || folderLabel == nil)
+            PersonalAction(title: "RESTAURAR UMA CÓPIA", icon: "arrow.counterclockwise") { openRestorePicker() }
+                .disabled(busy || folderLabel == nil)
+            if busy { ProgressView("A processar…") }
+        }
+        #else
+        ScreenScaffold(
+            title: "Backup & Sync",
+            subtitle: "Save a full backup to a folder you choose - point it at Google Drive, iCloud or Dropbox for off-device sync."
+        ) {
+            VStack(alignment: .leading, spacing: NoopMetrics.sectionGap) {
+                folderCard
+                autoCard
+                restoreCard
+            }
+        }
+        #endif
     }
 
     // MARK: - Cards

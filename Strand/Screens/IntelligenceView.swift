@@ -27,7 +27,23 @@ struct IntelligenceView: View {
         // `lazy` so the trailing By-Day `ForEach` renders day cards on demand. With an 800+ day
         // imported history, an eager VStack built every card up-front on the main thread and froze
         // the app when ALL was tapped (#345); LazyVStack only materialises what's on screen.
-        ScreenScaffold(title: "Intelligence",
+        Group {
+            #if os(iOS)
+            PersonalPage(title: "ANÁLISE DOS DADOS") {
+            if intelligence.computing { ProgressView("A calcular os indicadores…") }
+            if let note = intelligence.note { Text(note).font(PersonalWhoopStyle.body).foregroundStyle(PersonalWhoopStyle.secondary) }
+            if let f = forecast { forecastCard(f) }
+            Picker("Período", selection: $range) {
+                ForEach(IntelRange.allCases, id: \.self) { value in Text(value.label).tag(value) }
+            }.pickerStyle(.segmented)
+            if filtered.isEmpty {
+                PersonalWhoopCard { Text("Os indicadores aparecem quando existirem dados suficientes. A recuperação precisa de várias noites para estabelecer a tua referência.").font(PersonalWhoopStyle.body) }
+            }
+            ForEach(filtered, id: \.id) { day in personalComputedDay(day) }
+            PersonalSection(title: "COMO SÃO CALCULADOS", icon: "info.circle") { explainerCard }
+            }
+            #else
+            ScreenScaffold(title: "Intelligence",
                        subtitle: "NOOP scores your charge, effort and rest itself: on-device, no cloud.",
                        lazy: true,
                        // Liquid finish: the same full-bleed day-of-sky backdrop Today + the other liquid
@@ -91,6 +107,8 @@ struct IntelligenceView: View {
                     }
                 }
             }
+        }
+            #endif
         }
         .task { if intelligence.results.isEmpty { await intelligence.analyzeRecent() } }
         .toolbar {
@@ -244,6 +262,29 @@ struct IntelligenceView: View {
         .accessibilityElement(children: .ignore)
         .accessibilityLabel("\(label): \(percent) of Charge")
     }
+
+    #if os(iOS)
+    private func personalComputedDay(_ day: IntelligenceEngine.Computed) -> some View {
+        PersonalWhoopCard {
+            VStack(alignment: .leading, spacing: PersonalWhoopStyle.margin) {
+                HStack {
+                    Text(day.day).font(PersonalWhoopStyle.label)
+                    Spacer()
+                    Text("CÁLCULO LOCAL").font(PersonalWhoopStyle.label).foregroundStyle(PersonalWhoopStyle.secondary)
+                }
+                HStack {
+                    stat("RECUPERAÇÃO", day.recovery.map { String(format: "%.0f%%", $0) } ?? "--", PersonalWhoopStyle.green)
+                    stat("ESFORÇO", PersonalMetricScale.effort(day.strain).map { String(format: "%.1f", $0) } ?? "--", PersonalWhoopStyle.effort)
+                    stat("SONO", day.sleepMin.map { "\(Int($0) / 60)h \(Int($0) % 60)m" } ?? "--", PersonalWhoopStyle.sleep)
+                }
+                if day.recovery != nil { ConfidenceTierChip(confidence: day.confidence) }
+                if !day.drivers.isEmpty {
+                    ChargeBreakdownSection(drivers: day.drivers, confidence: day.confidence, skinTempRel: day.skinTempRel)
+                }
+            }
+        }
+    }
+    #endif
 
     private func dayCard(_ d: IntelligenceEngine.Computed) -> some View {
         NoopCard(padding: 18, tint: StrandPalette.chargeColor) {

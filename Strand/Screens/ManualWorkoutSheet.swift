@@ -119,31 +119,36 @@ struct ManualWorkoutSheet: View {
             // Lets the user dismiss the decimal pad (which has no return key) and reach Cancel/Add.
             .keyboardDoneToolbar($focusedField)
         #else
-        // #450 raised the sheet to .large so the keyboard had room, but the body was still a bare
-        // fixed-height VStack — with no ScrollView to absorb the squeeze, iOS's own keyboard-avoidance
-        // had no choice but to rigidly shift the WHOLE block up to keep the focused Sport field clear
-        // of the keyboard. That shift could push the header + Sport field (and the top of its floating
-        // suggestion overlay) off the top of the screen entirely — "recents still clip" — and could also
-        // carry the footer's Add/Cancel row up into the same band where the system's own keyboard
-        // "Done" accessory renders, producing the floating Fertig/Hinzufügen overlap. Wrapping in a
-        // ScrollView gives keyboard-avoidance somewhere to scroll INSTEAD of rigidly displacing fixed
-        // content, so nothing needs to leave its own bounds to stay clear of the keyboard.
-        ScrollView {
-            formContent
-                .padding(NoopMetrics.space6)
-        }
-        // #697/#horizontal-swipe parity, see ScreenScaffold.
-        .scrollBounceBehavior(.basedOnSize, axes: .horizontal)
-        .scrollDismissesKeyboard(.interactively)
-        // A fixed 420pt is right for the free-floating macOS sheet, but on iPhone it's wider than
-        // the screen, so the Avg HR/Calories row, the Start DatePicker and the footer ran off the
-        // right edge (#185, same fix as WhatsNewView/ScoringGuideView). iOS fills the presented
-        // sheet's width and sizes to content height instead.
-        .frame(maxWidth: .infinity)
-        .noopSheetPresentation(largeFirst: true)
-        .background(NoopChromeSurface())
-        // Lets the user dismiss the decimal pad (which has no return key) and reach Cancel/Add.
-        .keyboardDoneToolbar($focusedField)
+        NavigationStack {
+            PersonalPage(title: editing == nil ? "ADICIONAR ATIVIDADE" : "EDITAR ATIVIDADE") {
+                PersonalWhoopCard {
+                    VStack(alignment: .leading, spacing: PersonalWhoopStyle.section) {
+                        TextField("Atividade", text: $sport)
+                        Picker("Escolher atividade", selection: $sport) {
+                            if !WorkoutCatalog.all.contains(where: { $0.name == sport }) { Text(sport).tag(sport) }
+                            ForEach(WorkoutCatalog.all) { Text($0.name).tag($0.name) }
+                        }
+                        DatePicker("Início", selection: startBinding, in: ...Date(), displayedComponents: [.date, .hourAndMinute])
+                        DatePicker("Fim", selection: $end, in: ...Date(), displayedComponents: [.date, .hourAndMinute])
+                        Text("Duração: \(durationLabel)").font(PersonalWhoopStyle.body)
+                    }
+                }
+                PersonalWhoopCard {
+                    VStack(alignment: .leading, spacing: PersonalWhoopStyle.section) {
+                        Text("DADOS OPCIONAIS").font(PersonalWhoopStyle.label)
+                        TextField("FC média (bpm)", text: $avgHrText).keyboardType(.decimalPad)
+                        TextField("Calorias (kcal)", text: $kcalText).keyboardType(.decimalPad)
+                        TextField("Distância (\(distanceUnit))", text: $distanceText).keyboardType(.decimalPad)
+                    }
+                }
+                if let validationNote { Text(validationNote).font(PersonalWhoopStyle.body).foregroundStyle(PersonalWhoopStyle.red) }
+                if avgHrEditedNote {
+                    Text("Alterar a FC média não recalcula os valores de esforço nem as zonas já captadas.")
+                        .font(PersonalWhoopStyle.label).foregroundStyle(PersonalWhoopStyle.secondary)
+                }
+                PersonalAction(title: "GUARDAR ATIVIDADE", icon: "checkmark") { save() }.disabled(builtRow == nil)
+            }.toolbar { ToolbarItem(placement: .topBarTrailing) { Button("Cancelar") { dismiss() } } }
+        }.preferredColorScheme(.dark)
         #endif
     }
 

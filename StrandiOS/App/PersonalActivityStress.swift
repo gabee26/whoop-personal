@@ -40,8 +40,8 @@ struct PersonalActivityStress: View {
                 NavigationStack {
                     Group {
                         switch action {
-                        case .history: WorkoutsView()
-                        case .live: LiveView()
+                        case .history: PersonalWorkoutLog()
+                        case .live: PersonalLiveScreen()
                         case .stress: StressView()
                         }
                     }.toolbar { ToolbarItem(placement: .topBarTrailing) { Button("Fechar") { sheet = nil } } }

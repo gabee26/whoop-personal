@@ -105,7 +105,7 @@ struct PersonalComparisonScreen: View {
             .task(id: repo.refreshSeq) { await load() }
             .sheet(isPresented: $showBackup) {
                 NavigationStack {
-                    DataSourcesView().toolbar {
+                    PersonalImportScreen().toolbar {
                         ToolbarItem(placement: .topBarTrailing) { Button("Fechar") { showBackup = false } }
                     }
                 }

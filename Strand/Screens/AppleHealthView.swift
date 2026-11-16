@@ -193,7 +193,25 @@ struct AppleHealthView: View {
     }
 
     var body: some View {
-        ScreenScaffold(title: "Apple Health", subtitle: spanSubtitle.map { "\($0)" },
+        Group {
+            #if os(iOS)
+            PersonalPage(title: "SAÚDE DA APPLE") {
+            liveSyncCard
+            if !loaded { loadingState }
+            else if !hasAnyData {
+                PersonalWhoopCard { Text("Sem dados da Saúde da Apple. Usa a autorização disponível acima ou importa o ficheiro de exportação.").font(PersonalWhoopStyle.body) }
+                NavigationLink("IMPORTAR HISTÓRICO") { PersonalImportScreen() }
+            } else {
+                rangeControl
+                PersonalSection(title: "CORAÇÃO", icon: "heart") { heartSection }
+                PersonalSection(title: "ATIVIDADE", icon: "figure.walk") { activitySection }
+                PersonalSection(title: "SONO", icon: "moon") { sleepSection }
+                PersonalSection(title: "CORPO", icon: "figure.stand") { bodySection }
+                tileGrid
+            }
+            }
+            #else
+            ScreenScaffold(title: "Apple Health", subtitle: spanSubtitle.map { "\($0)" },
                        onRefresh: { await repo.refresh() },
                        // PERF: chart-heavy column (the tile grid plus the heart / activity / body / sleep
                        // sections, each carrying its own sparklines + metric charts). The LazyVStack path
@@ -234,6 +252,8 @@ struct AppleHealthView: View {
                     sleepSection
                 }
             }
+        }
+            #endif
         }
         .task(id: AppleHealthLoadKey(seq: repo.refreshSeq, dayKey: Repository.localDayKey(Date()))) { await load(allowCache: true) }
         .onChangeCompat(of: range) { _ in rebuildWindowCache() }
