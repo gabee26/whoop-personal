@@ -17,23 +17,27 @@ public enum PersonalWhoopStyle {
     public static let red = Color(hex: "FF2246")
     public static let purple = Color(hex: "8562EF")
     public static let margin: CGFloat = 16
-    public static let gap: CGFloat = 12
-    public static let section: CGFloat = 30
-    public static let radius: CGFloat = 22
+    public static let gap: CGFloat = 8
+    public static let section: CGFloat = 20
+    public static let radius: CGFloat = 12
+    public static let cardPadding: CGFloat = 12
+    public static let touchTarget: CGFloat = 44
+    public static let homeRingSize: CGFloat = 88
+    public static let gaugeHeight: CGFloat = 100
     public static let glassStroke: CGFloat = 0.75
-    public static let glassShadow: CGFloat = 16
-    public static let glassHighlight = Color.white.opacity(0.22)
+    public static let glassShadow: CGFloat = 4
+    public static let glassHighlight = Color.white.opacity(0.08)
     public static let glassShade = Color.black.opacity(0.16)
-    public static let dockHeight: CGFloat = 66
-    public static let ringWidth: CGFloat = 6
-    public static let detailRingSize: CGFloat = 180
-    public static let detailChartHeight: CGFloat = 180
-    public static let body = Font.system(size: 15, weight: .medium)
-    public static let label = Font.system(size: 12, weight: .bold)
-    public static let heading = Font.system(size: 23, weight: .semibold)
-    public static let number = Font.system(size: 28, weight: .bold).monospacedDigit()
-    public static let icon = Font.system(size: 24, weight: .regular)
-    public static let wordmark = Font.system(size: 22, weight: .light)
+    public static let dockHeight: CGFloat = 56
+    public static let ringWidth: CGFloat = 5
+    public static let detailRingSize: CGFloat = 140
+    public static let detailChartHeight: CGFloat = 160
+    public static let body = Font.system(size: 13, weight: .regular)
+    public static let label = Font.system(size: 10, weight: .semibold)
+    public static let heading = Font.system(size: 19, weight: .semibold)
+    public static let number = Font.system(size: 25, weight: .semibold).monospacedDigit()
+    public static let icon = Font.system(size: 20, weight: .regular)
+    public static let wordmark = Font.system(size: 19, weight: .light)
     public static let deviceIllustration = Font.system(size: 90, weight: .ultraLight)
     public static var background: LinearGradient {
         LinearGradient(colors: [top, bottom, bottom], startPoint: .top, endPoint: .bottom)
@@ -69,7 +73,7 @@ public struct PersonalWhoopCard<Content: View>: View {
     public init(@ViewBuilder content: () -> Content) { self.content = content() }
     public var body: some View {
         content.frame(maxWidth: .infinity, alignment: .leading)
-            .padding(PersonalWhoopStyle.margin)
+            .padding(PersonalWhoopStyle.cardPadding)
             .background(PersonalGlassSurface())
     }
 }

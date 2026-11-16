@@ -6,6 +6,7 @@ on:
     branches: [main]
     paths:
       - 'Strand/**'
+      - 'StrandTests/**'
       - 'StrandiOS/**'
       - 'StrandiOSShared/**'
       - 'StrandiOSWidgets/**'
@@ -20,6 +21,29 @@ permissions:
   contents: read
 
 jobs:
+  stress-regression:
+    runs-on: macos-26
+    timeout-minutes: 35
+    steps:
+      - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5.1.0
+      - name: Install XcodeGen
+        run: brew install xcodegen
+      - name: Generate project
+        run: |
+          python3 Tools/prepare_personal_whoop.py
+          xcodegen generate --spec project.personal-whoop.generated.yml
+      - name: Test selected-day stress and existing carry behavior
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p build
+          xcodebuild -project Strand.xcodeproj -scheme Strand -destination 'platform=macOS' -derivedDataPath build/stress-tests -only-testing:StrandTests/PersonalStressSummaryTests -only-testing:StrandTests/StressModelCarryTests CODE_SIGNING_ALLOWED=NO test 2>&1 | tee build/personal-stress-tests.log
+      - name: Save stress test log
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: WHOOP-stress-tests-${{ github.run_number }}
+          path: build/personal-stress-tests.log
   ios:
     runs-on: macos-26
     timeout-minutes: 60

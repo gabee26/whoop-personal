@@ -109,8 +109,7 @@ struct StressView: View {
                     Text("RESUMO DIÁRIO").font(PersonalWhoopStyle.label).tracking(1)
                     if !loaded { ProgressView("A analisar…") }
                     else if let model {
-                        Text(String(format: "%.1f", model.score)).font(PersonalWhoopStyle.number)
-                        Text(model.band.title).font(PersonalWhoopStyle.label)
+                        PersonalStressGauge(value: model.score)
                         Text(model.explanation).font(PersonalWhoopStyle.body).foregroundStyle(PersonalWhoopStyle.secondary)
                     } else { Text("SEM DADOS").font(PersonalWhoopStyle.heading) }
                 }

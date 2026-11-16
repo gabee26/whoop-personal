@@ -7,7 +7,7 @@ import WhoopStore
 private typealias W = PersonalWhoopStyle
 
 private enum PersonalDestination: String, Identifiable {
-    case sleep, recovery, effort, health, stress, activities, live, alarm, settings, metrics, plans, devices, backup, journal, intelligence, comparison, tools, sources, trends, athlete
+    case sleep, recovery, effort, health, stress, activities, live, alarm, settings, metrics, plans, devices, backup, journal, intelligence, comparison, tools, sources, trends, athlete, fitness
     var id: String { rawValue }
 }
 
@@ -27,8 +27,9 @@ private struct PersonalDetail: View {
         case .sleep: PersonalMetricDetail(metric: .sleep, initialDayKey: dayKey)
         case .recovery: PersonalMetricDetail(metric: .recovery, initialDayKey: dayKey)
         case .effort: PersonalMetricDetail(metric: .effort, initialDayKey: dayKey)
+        case .fitness: PersonalFitnessScreen()
         case .health: PersonalHealthHistory()
-        case .stress: PersonalActivityStress(mode: .stress)
+        case .stress: PersonalActivityStress(mode: .stress, initialDayKey: dayKey)
         case .activities: PersonalActivityStress(mode: .activities, initialDayKey: dayKey)
         case .live: PersonalLiveScreen()
         case .alarm: SmartAlarmView()
@@ -59,6 +60,7 @@ struct PersonalWhoopHome: View {
     @State private var customize = false
     @State private var offset = 0
     @State private var rest: Double?
+    @State private var stressSeries: [(day: String, value: Double)] = []
     @State private var destination: PersonalDestination?
     private var dayKey: String {
         if offset == 0 { return repo.today?.day ?? Repository.localDayKey(Date()) }
@@ -79,9 +81,9 @@ struct PersonalWhoopHome: View {
                     Section {
                         Text("WHOOP").font(W.wordmark).tracking(3).frame(maxWidth: .infinity)
                         HStack(spacing: W.margin) {
-                            Button { destination = .sleep } label: { PersonalWhoopRing("SONO", value: rest, color: W.sleep) }
-                            Button { destination = .recovery } label: { PersonalWhoopRing("RECUPERAÇÃO", value: PersonalMetricScale.percentage(day?.recovery), color: W.recovery(day?.recovery)) }
-                            Button { destination = .effort } label: { PersonalWhoopRing("ESFORÇO", value: PersonalMetricScale.effort(day?.strain), maximum: 21, color: W.effort) }
+                            Button { destination = .sleep } label: { PersonalWhoopRing("SONO", value: rest, color: W.sleep).frame(maxWidth: W.homeRingSize) }.frame(maxWidth: .infinity)
+                            Button { destination = .recovery } label: { PersonalWhoopRing("RECUPERAÇÃO", value: PersonalMetricScale.percentage(day?.recovery), color: W.recovery(day?.recovery)).frame(maxWidth: W.homeRingSize) }.frame(maxWidth: .infinity)
+                            Button { destination = .effort } label: { PersonalWhoopRing("ESFORÇO", value: PersonalMetricScale.effort(day?.strain), maximum: 21, color: W.effort).frame(maxWidth: W.homeRingSize) }.frame(maxWidth: .infinity)
                         }.padding(.vertical, W.gap)
                         PersonalWhoopCard {
                             VStack(alignment: .leading, spacing: W.gap) {
@@ -143,17 +145,31 @@ struct PersonalWhoopHome: View {
                             Spacer()
                             Button("PERSONALIZAR") { customize = true }.font(W.label).foregroundStyle(W.effort)
                         }
+                        Button { destination = .fitness } label: {
+                            PersonalWhoopCard {
+                                HStack(spacing: W.gap) {
+                                    Image(systemName: "figure.run").font(W.icon).foregroundStyle(W.purple)
+                                    VStack(alignment: .leading, spacing: W.gap) {
+                                        Text("IDADE DE CONDIÇÃO FÍSICA / VO₂ MÁX.").font(W.label)
+                                        Text("Estimativas locais e evolução").font(W.body).foregroundStyle(W.secondary)
+                                    }
+                                    Spacer(minLength: 0)
+                                    Image(systemName: "chevron.right")
+                                }
+                            }
+                        }
                         if showHRV { metric("VARIABILIDADE DA FREQUÊNCIA CARDÍACA", "waveform.path.ecg", formatted(day?.avgHrv, unit: " ms"), key: "hrv") }
                         if showRHR { metric("FREQUÊNCIA CARDÍACA EM REPOUSO", "heart", day?.restingHr.map { "\($0) bpm" } ?? "--", key: "rhr") }
                         if showSteps { metric("PASSOS", "shoeprints.fill", day?.steps.map { String($0) } ?? "--", key: "steps") }
                         if showCalories { metric("CALORIAS DO DIA ESTIMADAS", "flame", formatted(day?.activeKcalEst, unit: " kcal"), key: "energy_kcal") }
                         Button { destination = .stress } label: {
                             PersonalWhoopCard {
-                                VStack(alignment: .leading, spacing: W.section) {
+                                VStack(alignment: .leading, spacing: W.margin) {
                                     caption("MONITOR DE STRESS")
-                                    Image(systemName: "chart.xyaxis.line").font(W.number).foregroundStyle(W.muted).frame(maxWidth: .infinity)
-                                    Text("ABRIR HISTÓRICO DE STRESS  ›").font(W.label).frame(maxWidth: .infinity)
-                                }.padding(.vertical, W.margin)
+                                    PersonalStressGauge(value: stressValue)
+                                    Text("RESUMO DO DIA · ESTIMATIVA LOCAL").font(W.label).foregroundStyle(W.secondary)
+                                    Text("VER HISTÓRICO E ANÁLISE  ›").font(W.label)
+                                }
                             }
                         }
                         weeklyChart
@@ -187,20 +203,26 @@ struct PersonalWhoopHome: View {
             }
             .task(id: "\(dayKey)-\(repo.refreshSeq)") {
                 rest = nil
+                stressSeries = []
                 let key = dayKey
                 let points = await repo.exploreSeries(key: "sleep_performance", source: Repository.whoopSource)
+                let stressRows = await repo.exploreSeries(key: "stress", source: Repository.whoopSource)
                 guard !Task.isCancelled, key == dayKey else { return }
+                stressSeries = stressRows.filter { $0.value.isFinite && (0...3).contains($0.value) && $0.day <= key }
                 rest = PersonalMetricScale.percentage(points.last(where: { $0.day == key })?.value)
             }
+    }
+    private var stressValue: Double? {
+        PersonalStressSummary.value(day: dayKey, days: repo.days, stored: stressSeries)
     }
     private var header: some View {
         HStack {
             Button { destination = .settings } label: { Image(systemName: "person.crop.circle").font(W.number) }.accessibilityLabel("Perfil")
             Spacer()
             HStack(spacing: W.margin) {
-                Button { offset += 1 } label: { Image(systemName: "chevron.left") }.accessibilityLabel("Dia anterior")
+                Button { offset += 1 } label: { Image(systemName: "chevron.left").frame(minWidth: W.touchTarget, minHeight: W.touchTarget) }.accessibilityLabel("Dia anterior")
                 Text(offset == 0 ? "HOJE" : dayKey).font(W.label).tracking(1)
-                Button { offset = max(0, offset - 1) } label: { Image(systemName: "chevron.right") }.disabled(offset == 0).accessibilityLabel("Dia seguinte")
+                Button { offset = max(0, offset - 1) } label: { Image(systemName: "chevron.right").frame(minWidth: W.touchTarget, minHeight: W.touchTarget) }.disabled(offset == 0).accessibilityLabel("Dia seguinte")
             }.padding(W.gap).background(W.track.opacity(0.5), in: Capsule())
             Spacer()
             Button { destination = .devices } label: { PersonalStrapBadge() }
@@ -214,13 +236,13 @@ struct PersonalWhoopHome: View {
                     HStack(alignment: .top) { caption(title); Spacer(minLength: 0); Image(systemName: "chevron.right").foregroundStyle(W.muted) }
                     Text(hasData ? "Consultar indicadores" : (route == .stress ? "Consultar histórico" : "Sem dados disponíveis"))
                         .font(W.body).foregroundStyle(W.secondary)
-                }.frame(maxWidth: .infinity, minHeight: 80, alignment: .leading)
+                }.frame(maxWidth: .infinity, minHeight: 52, alignment: .leading)
             }
         }
     }
     private func action(_ title: String, _ icon: String, _ route: PersonalDestination) -> some View {
         Button { destination = route } label: {
-            Label(title, systemImage: icon).font(W.label).tracking(1).frame(maxWidth: .infinity, minHeight: 46)
+            Label(title, systemImage: icon).font(W.label).tracking(1).frame(maxWidth: .infinity, minHeight: W.touchTarget)
                 .padding(W.gap).background(W.track, in: RoundedRectangle(cornerRadius: W.radius))
         }
     }
@@ -255,11 +277,11 @@ struct PersonalWhoopHome: View {
                                 PointMark(x: .value("Dia", row.day), y: .value("Recuperação", recovery)).foregroundStyle(W.recovery(recovery))
                             }
                         }
-                    }.chartYScale(domain: 0...100).frame(height: 190)
+                    }.chartYScale(domain: 0...100).frame(height: W.detailChartHeight)
                     Text("Azul: esforço (0–21 convertido para % da escala). Pontos: recuperação (%).")
                         .font(W.label).foregroundStyle(W.secondary)
                 } else {
-                    Text("SEM DADOS").font(W.label).frame(maxWidth: .infinity, minHeight: 190).foregroundStyle(W.secondary)
+                    Text("SEM DADOS").font(W.label).frame(maxWidth: .infinity, minHeight: W.detailChartHeight).foregroundStyle(W.secondary)
                 }
             }
         }
@@ -291,6 +313,18 @@ struct PersonalWhoopHealth: View {
             ScrollView {
                 VStack(alignment: .leading, spacing: W.section) {
                     Text("SAÚDE").font(W.label).tracking(2).frame(maxWidth: .infinity).padding(.vertical, W.section)
+                    Button { destination = .fitness } label: {
+                        PersonalWhoopCard {
+                            HStack {
+                                VStack(alignment: .leading, spacing: W.gap) {
+                                    Text("CONDIÇÃO FÍSICA").font(W.label)
+                                    Text("Idade estimada e VO₂ máx.").font(W.heading)
+                                }
+                                Spacer()
+                                Image(systemName: "chevron.right")
+                            }
+                        }
+                    }
                     Button { destination = .live } label: {
                         VStack(alignment: .leading, spacing: W.gap) {
                             PersonalHeartRate()

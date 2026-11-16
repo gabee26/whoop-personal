@@ -31,7 +31,7 @@ struct PersonalHealthHistory: View {
             case .respiration: "resp_rate"
             case .oxygen: "spo2"
             case .steps: "steps"
-            case .calories: "active_kcal"
+            case .calories: "energy_kcal"
             }
         }
         var unit: String {

@@ -28,12 +28,13 @@ struct PersonalActivityStress: View {
             .navigationTitle(mode == .activities ? "ATIVIDADES" : "MONITOR DE STRESS")
             .navigationBarTitleDisplayMode(.inline)
             .toolbarBackground(.hidden, for: .navigationBar)
-            .task(id: repo.refreshSeq) {
+            .task(id: "\(selectedDay)-\(repo.refreshSeq)") {
                 guard mode == .stress else { return }
                 loading = true
-                let points = await repo.exploreSeries(key: "stress", source: Repository.whoopSource, days: 14)
+                stress = []
+                let points = await repo.exploreSeries(key: "stress", source: Repository.whoopSource, days: 365)
                 guard !Task.isCancelled else { return }
-                stress = points.filter { $0.value.isFinite }.sorted { $0.day < $1.day }
+                stress = points.filter { $0.value.isFinite && (0...3).contains($0.value) && $0.day <= selectedDay }.sorted { $0.day < $1.day }
                 loading = false
             }
             .sheet(item: $sheet) { action in
@@ -87,7 +88,15 @@ struct PersonalActivityStress: View {
         VStack(alignment: .leading, spacing: S.section) {
             PersonalWhoopCard {
                 VStack(alignment: .leading, spacing: S.margin) {
-                    Text("HISTÓRICO DIÁRIO · 14 DIAS").font(S.label).tracking(1)
+                    Text("STRESS · \(selectedDay)").font(S.label)
+                    if loading { ProgressView() }
+                    else { PersonalStressGauge(value: PersonalStressSummary.value(day: selectedDay, days: repo.days, stored: stress)) }
+                    Text("Resumo diário estimado · escala 0–3").font(S.body).foregroundStyle(S.secondary)
+                }
+            }
+            PersonalWhoopCard {
+                VStack(alignment: .leading, spacing: S.margin) {
+                    Text("ÚLTIMOS 14 REGISTOS DIÁRIOS").font(S.label).tracking(1)
                     if loading {
                         ProgressView().frame(maxWidth: .infinity, minHeight: S.detailChartHeight)
                     } else if stress.isEmpty {
@@ -97,17 +106,17 @@ struct PersonalActivityStress: View {
                         }.foregroundStyle(S.muted).frame(maxWidth: .infinity, minHeight: S.detailChartHeight)
                     } else {
                         Chart {
-                            ForEach(stress, id: \.day) { point in
+                            ForEach(Array(stress.suffix(14)), id: \.day) { point in
                                 BarMark(x: .value("Dia", String(point.day.suffix(5))), y: .value("Stress", point.value))
                                     .foregroundStyle(S.sleep)
                             }
-                        }.frame(height: S.detailChartHeight)
+                        }.chartYScale(domain: 0...3).frame(height: S.detailChartHeight)
                     }
                     Text("Valores diários guardados localmente. Este gráfico não representa uma medição contínua nem o stress neste momento.")
                         .font(S.body).foregroundStyle(S.secondary)
                 }
             }
-            button("ABRIR ANÁLISE INTRADIÁRIA", "waveform.path.ecg", .stress)
+            button("ABRIR ANÁLISE INTRADIÁRIA DE HOJE", "waveform.path.ecg", .stress)
             Text("A análise detalhada usa os sinais disponíveis e mostra a cobertura de dados. Pode existir informação intradiária mesmo sem um resumo diário guardado.")
                 .font(S.body).foregroundStyle(S.secondary)
         }

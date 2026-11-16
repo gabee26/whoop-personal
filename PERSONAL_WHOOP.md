@@ -1,5 +1,31 @@
 # WHOOP personal iPhone build
 
+## Compact metrics presentation (2026-11-16)
+
+The personal iPhone theme now uses smaller headings, cards, spacing and home rings.
+Home and Health link to a fitness screen that reads the existing `fitness_age` and
+`vo2max_est` series, shows the calculation date and persisted VO2 estimator, and
+allows the existing weekly calculation to be refreshed. The profile exposes waist
+circumference, already consumed by that engine. These are local estimates, not
+WHOOP Age or a laboratory VO2 measurement. The new adult-model screen does not
+show these estimates for profiles under 18; no underlying analytics formula changed.
+
+The curved 0–3 stress gauge displays a daily summary, explicitly not a live reading.
+Both personal date-selected surfaces use `PersonalStressSummary`, which rejects
+other-day carry and future inputs. Intraday analysis remains a separate, clearly
+labelled today view. The calorie history now uses `energy_kcal`, consistent with
+the local daily-total catalog entry and the home card.
+
+This is an iPhone presentation change; Android calculations and stored values are
+unchanged. No third-party implementation was copied. Reference screenshot text
+was retrieved, but image materialization failed, so exact visual matching has not
+been verified. Seven existing Python branding/icon tests and the personal project
+generator pass on Windows. Four regression tests were added in
+`StrandTests/PersonalStressSummaryTests.swift`; they require the macOS app test
+target and have not run here. SwiftUI compilation, simulator screenshots and
+strap operation remain unverified. GitHub connectivity failed during this change;
+no remote build or updated IPA has been produced.
+
 This personal app displays the name WHOOP and is a non-commercial derivative of NOOP.
 It is not the official WHOOP application. Upstream copyright,
 LICENSE, NOTICE and ATTRIBUTION.md remain applicable and unchanged.

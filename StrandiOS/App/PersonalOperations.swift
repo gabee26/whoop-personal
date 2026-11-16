@@ -202,6 +202,8 @@ struct PersonalProfileScreen: View {
                     }
                     Stepper("Peso: \(profile.weightKg, specifier: "%.1f") kg", value: $profile.weightKg, in: 20...350, step: 0.5)
                     Stepper("Altura: \(profile.heightCm, specifier: "%.0f") cm", value: $profile.heightCm, in: 80...250)
+                    Stepper("Cintura: \(profile.waistCm, specifier: "%.0f") cm (0 = não indicada)", value: $profile.waistCm, in: 0...250)
+                    Text("A medida de cintura permite usar a estimativa Nes de VO₂ máx. Sem ela, o motor usa uma aproximação pela frequência cardíaca.").font(S.body).foregroundStyle(S.secondary)
                 }.font(S.body)
             }
             PersonalWhoopCard {
