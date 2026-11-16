@@ -12,6 +12,9 @@ struct PersonalDailyPlan: View {
     private var today: String { Repository.localDayKey(Date()) }
     var body: some View {
         PersonalPage(title: "O MEU PLANO") {
+            NavigationLink { PersonalAthleteScreen() } label: {
+                PersonalWhoopCard { Label("DIÁRIO DE ATLETA E PLANO DE SONO", systemImage: "sportscourt").font(S.label) }
+            }
             Text("Objetivos definidos por ti").font(S.heading)
             Text("O progresso usa apenas os registos disponíveis. Um valor em falta não significa zero; sincroniza a pulseira para atualizar.")
                 .font(S.body).foregroundStyle(S.secondary)

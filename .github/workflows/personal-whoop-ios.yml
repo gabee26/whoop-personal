@@ -2,6 +2,19 @@ name: WHOOP - personal iPhone IPA
 
 on:
   workflow_dispatch:
+  push:
+    branches: [main]
+    paths:
+      - 'Strand/**'
+      - 'StrandiOS/**'
+      - 'StrandiOSShared/**'
+      - 'StrandiOSWidgets/**'
+      - 'Packages/**'
+      - 'Config/**'
+      - 'NOOPWatch*/**'
+      - 'project.yml'
+      - 'Tools/**'
+      - '.github/workflows/personal-whoop-ios.yml'
 
 permissions:
   contents: read

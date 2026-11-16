@@ -40,6 +40,10 @@ struct PersonalSeriesDetail: View {
     private var loadKey: String { "\(metric.id)-\(period)-\(repo.refreshSeq)" }
     var body: some View {
         PersonalPage(title: metric.title.uppercased()) {
+            if metric.key == "energy_kcal" || metric.key == "active_kcal" {
+                Text("No cálculo diário local, este valor inclui repouso e atividade nos períodos com registos. Confirma a origem ao comparar com calorias apenas de atividade de outra aplicação.")
+                    .font(S.body).foregroundStyle(S.secondary)
+            }
             Picker("Período", selection: $period) {
                 Text("7 dias").tag(7)
                 Text("30 dias").tag(30)

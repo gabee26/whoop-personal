@@ -7,7 +7,7 @@ import WhoopStore
 private typealias W = PersonalWhoopStyle
 
 private enum PersonalDestination: String, Identifiable {
-    case sleep, recovery, effort, health, stress, activities, live, alarm, settings, metrics, plans, devices, backup, journal, intelligence, comparison, tools, sources, trends
+    case sleep, recovery, effort, health, stress, activities, live, alarm, settings, metrics, plans, devices, backup, journal, intelligence, comparison, tools, sources, trends, athlete
     var id: String { rawValue }
 }
 
@@ -35,6 +35,7 @@ private struct PersonalDetail: View {
         case .settings: PersonalSettingsScreen()
         case .metrics: PersonalHealthHistory()
         case .plans: PersonalDailyPlan()
+        case .athlete: PersonalAthleteScreen()
         case .devices: PersonalDeviceScreen()
         case .backup: BackupSyncView()
         case .journal: InsightsView()
@@ -118,6 +119,15 @@ struct PersonalWhoopHome: View {
                             }
                         }
                         PersonalSyncCard()
+                        Button { destination = .athlete } label: {
+                            PersonalWhoopCard {
+                                VStack(alignment: .leading, spacing: W.gap) {
+                                    Label("O MEU DIA DE ATLETA", systemImage: "sportscourt").font(W.heading)
+                                    Text("Check-in, sono, treinos e recuperação numa visão pessoal.").font(W.body).foregroundStyle(W.secondary)
+                                    Text("ABRIR DIÁRIO DE ATLETA →").font(W.label).foregroundStyle(W.effort)
+                                }
+                            }
+                        }
                         Text("O meu plano").font(W.heading)
                         Button { destination = .plans } label: {
                             PersonalWhoopCard {
@@ -136,7 +146,7 @@ struct PersonalWhoopHome: View {
                         if showHRV { metric("VARIABILIDADE DA FREQUÊNCIA CARDÍACA", "waveform.path.ecg", formatted(day?.avgHrv, unit: " ms"), key: "hrv") }
                         if showRHR { metric("FREQUÊNCIA CARDÍACA EM REPOUSO", "heart", day?.restingHr.map { "\($0) bpm" } ?? "--", key: "rhr") }
                         if showSteps { metric("PASSOS", "shoeprints.fill", day?.steps.map { String($0) } ?? "--", key: "steps") }
-                        if showCalories { metric("CALORIAS ATIVAS ESTIMADAS", "flame", formatted(day?.activeKcalEst, unit: " kcal"), key: "energy_kcal") }
+                        if showCalories { metric("CALORIAS DO DIA ESTIMADAS", "flame", formatted(day?.activeKcalEst, unit: " kcal"), key: "energy_kcal") }
                         Button { destination = .stress } label: {
                             PersonalWhoopCard {
                                 VStack(alignment: .leading, spacing: W.section) {
@@ -169,7 +179,7 @@ struct PersonalWhoopHome: View {
                         Toggle("Variabilidade da frequência cardíaca", isOn: $showHRV)
                         Toggle("Frequência cardíaca em repouso", isOn: $showRHR)
                         Toggle("Passos", isOn: $showSteps)
-                        Toggle("Calorias ativas estimadas", isOn: $showCalories)
+                        Toggle("Calorias do dia estimadas", isOn: $showCalories)
                     }.scrollContentBackground(.hidden).background(W.background)
                         .navigationTitle("O Meu Painel")
                         .toolbar { ToolbarItem(placement: .topBarTrailing) { Button("Concluído") { customize = false } } }
@@ -405,6 +415,7 @@ struct PersonalWhoopMore: View {
                     row("TENDÊNCIAS", "chart.xyaxis.line", .trends)
                     row("INDICADORES", "waveform.path.ecg", .metrics)
                     row("COMPARAR INDICADORES", "chart.bar.xaxis", .comparison)
+                    row("DIÁRIO DE ATLETA", "sportscourt", .athlete)
                     row("INSIGHTS", "sparkles", .intelligence)
                     row("IMPORTAR HISTÓRICO", "square.and.arrow.down", .sources)
                     row("CÓPIAS DE SEGURANÇA", "externaldrive", .backup)

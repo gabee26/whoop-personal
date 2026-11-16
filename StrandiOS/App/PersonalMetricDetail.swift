@@ -138,7 +138,7 @@ struct PersonalMetricDetail: View {
         case .effort:
             metricRow("ATIVIDADES", row?.exerciseCount.map(String.init) ?? "--", "figure.run")
             metricRow("PASSOS", row?.steps.map(String.init) ?? "--", "shoeprints.fill")
-            metricRow("CALORIAS ATIVAS ESTIMADAS", number(row?.activeKcalEst, " kcal"), "flame")
+            metricRow("CALORIAS DO DIA ESTIMADAS", number(row?.activeKcalEst, " kcal"), "flame")
         }
     }
     private func metricRow(_ title: String, _ value: String, _ icon: String) -> some View {

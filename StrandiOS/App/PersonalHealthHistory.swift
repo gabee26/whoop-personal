@@ -21,7 +21,7 @@ struct PersonalHealthHistory: View {
             case .respiration: "FREQUÊNCIA RESPIRATÓRIA"
             case .oxygen: "OXIGÉNIO NO SANGUE"
             case .steps: "PASSOS"
-            case .calories: "CALORIAS ATIVAS ESTIMADAS"
+            case .calories: "CALORIAS DO DIA ESTIMADAS"
             }
         }
         var key: String {
@@ -51,6 +51,10 @@ struct PersonalHealthHistory: View {
             S.background.ignoresSafeArea()
             ScrollView {
                 VStack(alignment: .leading, spacing: S.section) {
+                    if selected == .calories {
+                        Text("O total local inclui repouso e atividade nos períodos com dados. Não são apenas calorias ativas; períodos sem registos podem deixar o total incompleto.")
+                            .font(S.body).foregroundStyle(S.secondary)
+                    }
                     Picker("Indicador", selection: $selected) {
                         ForEach(Indicator.allCases) { Text($0.title).tag($0) }
                     }.pickerStyle(.menu).tint(S.text)

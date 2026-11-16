@@ -25,7 +25,7 @@ struct PersonalComparisonScreen: View {
             case .hrv: "ms"
             case .rhr: "bpm"
             case .recovery: "pontos percentuais"
-            case .effort: "pontos (0–21)"
+            case .effort: "pontos de escala (0-21)"
             }
         }
         func value(_ row: DailyMetric) -> Double? {
@@ -57,6 +57,8 @@ struct PersonalComparisonScreen: View {
                         VStack(alignment: .leading, spacing: S.gap) {
                             Text("IMPORTADO × CÁLCULO LOCAL").font(S.label).tracking(1)
                             Text("Compara o mesmo dia, sem misturar as duas fontes nem modificar os teus dados.")
+                                .font(S.body).foregroundStyle(S.secondary)
+                            Text("O esforço local foi reescalado de 0–100 para 0–21 apenas para apresentação. Não é o algoritmo não linear da WHOOP; uma diferença de scores não mede diretamente erro fisiológico.")
                                 .font(S.body).foregroundStyle(S.secondary)
                             Text("Usa uma exportação original da WHOOP como referência. Um ficheiro reexportado por esta aplicação pode conter cálculos locais e não é uma referência independente.")
                                 .font(S.body).foregroundStyle(S.secondary)
