@@ -307,3 +307,11 @@ and identity checks, documentation-comment lint, UTF-8/directive/delimiter revie
 and git diff whitespace checks. Existing analytics/design Swift suites and iOS
 Release compilation remain in the manual GitHub workflow. Hardware verification
 requires the new IPA; no local Windows SwiftUI build or Bluetooth test is claimed.
+
+## Device status and missing measurements (2026-11-17)
+
+The personal iOS Health screen now accepts readable standard-profile heart-rate samples even when the heavy live-feed intent is off. While visible and foregrounded, it acquires the existing reference-counted live stream, releases it on exit/background/disconnect, and yields during history offload. No transport commands, persistence, or physiological calculations were changed. This is an iOS presentation change; Android retains its existing stream lifecycle.
+
+Device settings now use a compact full-page layout within the tab stack, with original vector strap/phone artwork, Status/Advanced tabs, and actual sync timestamps. Advanced exposes encrypted pairing, history readiness, decoded/diagnostic/undecoded block counts, and existing error and experimental-history warnings. A completed transfer is not described as proof of usable sensor records. The original device manager remains available for diagnosis.
+
+The home sync panel is visible before the metric rings. The disconnected, not-ready, failed and experimental-empty-history states are distinguished. These changes fix the confirmed HR display gate and expose the information required to diagnose missing nights/workouts; they do not prove that this user's strap has transferred history. Hardware validation and a current iOS build remain necessary. New presentation policy tests are included in the personal workflow's macOS test job.

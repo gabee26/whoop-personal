@@ -49,6 +49,20 @@ private struct PersonalDetail: View {
     }
 }
 
+private struct PersonalDestinationPresentation: ViewModifier {
+    @Binding var destination: PersonalDestination?
+    var dayKey: String? = nil
+    func body(content: Content) -> some View {
+        content
+            .sheet(item: Binding(get: { destination == .devices ? nil : destination }, set: { destination = $0 })) {
+                PersonalDetail(destination: $0, dayKey: dayKey)
+            }
+            .navigationDestination(isPresented: Binding(get: { destination == .devices }, set: { if !$0 { destination = nil } })) {
+                PersonalDeviceScreen()
+            }
+    }
+}
+
 struct PersonalWhoopHome: View {
     @EnvironmentObject private var ble: BLEManager
     @EnvironmentObject private var repo: Repository
@@ -79,6 +93,7 @@ struct PersonalWhoopHome: View {
             ScrollView {
                 LazyVStack(alignment: .leading, spacing: W.section, pinnedViews: [.sectionHeaders]) {
                     Section {
+                        PersonalSyncCard()
                         Text("WHOOP").font(W.wordmark).tracking(3).frame(maxWidth: .infinity)
                         HStack(spacing: W.margin) {
                             Button { destination = .sleep } label: { PersonalWhoopRing("SONO", value: rest, color: W.sleep).frame(maxWidth: W.homeRingSize) }.frame(maxWidth: .infinity)
@@ -120,7 +135,6 @@ struct PersonalWhoopHome: View {
                                 action("DEFINIR ALARME", "alarm", .alarm)
                             }
                         }
-                        PersonalSyncCard()
                         Button { destination = .athlete } label: {
                             PersonalWhoopCard {
                                 VStack(alignment: .leading, spacing: W.gap) {
@@ -182,7 +196,7 @@ struct PersonalWhoopHome: View {
                 await repo.refresh()
             }
         }.foregroundStyle(W.text).buttonStyle(.plain)
-            .sheet(item: $destination) { PersonalDetail(destination: $0, dayKey: dayKey) }
+            .modifier(PersonalDestinationPresentation(destination: $destination, dayKey: dayKey))
             .sheet(item: $selectedMetric) { metric in
                 NavigationStack {
                     PersonalSeriesDetail(metric: metric)
@@ -299,7 +313,7 @@ private struct PersonalStrapBadge: View {
         HStack(spacing: 4) {
             Text(formatted(live.batteryPct, unit: "%")).font(W.label).foregroundStyle(W.secondary)
             Image(systemName: "applewatch").font(W.icon)
-                .overlay(alignment: .topTrailing) { Circle().fill(live.connected ? W.green : W.muted).frame(width: 6, height: 6) }
+                .overlay(alignment: .topTrailing) { Circle().fill(live.connected ? (live.historyReady && live.lastSyncError == nil && !live.historySyncExperimental ? W.green : W.yellow) : W.muted).frame(width: 6, height: 6) }
         }.accessibilityLabel(live.connected ? "Pulseira ligada" : "Pulseira desligada")
     }
 }
@@ -363,7 +377,7 @@ struct PersonalWhoopHealth: View {
                 }.padding(W.margin).padding(.bottom, W.dockHeight + W.section)
             }
         }.foregroundStyle(W.text).buttonStyle(.plain)
-            .sheet(item: $destination) { PersonalDetail(destination: $0) }
+            .modifier(PersonalDestinationPresentation(destination: $destination))
     }
     private func vital(_ title: String, _ icon: String, _ value: String) -> some View {
         VStack(spacing: W.gap) {
@@ -375,46 +389,33 @@ struct PersonalWhoopHealth: View {
 }
 
 private struct PersonalHeartRate: View {
+    @EnvironmentObject private var model: AppModel
+    @Environment(\.scenePhase) private var scenePhase
+    @State private var visible = false
+    @State private var ownsStream = false
     @EnvironmentObject private var live: LiveState
     var body: some View {
         VStack(alignment: .leading, spacing: W.gap) {
             Text("FREQUÊNCIA CARDÍACA").font(W.label).tracking(1.2)
             Image(systemName: "waveform.path.ecg").font(W.icon).foregroundStyle(W.muted)
-            Text(live.connected && live.liveFeedActive ? live.heartRate.map(String.init) ?? "--" : "--").font(W.number)
+            Text(PersonalConnectionPresentation.heartRate(connected: live.connected, bpm: live.heartRate).map(String.init) ?? "--").font(W.number)
             Text("BPM").font(W.label).foregroundStyle(W.secondary)
-            Text(live.connected ? (live.liveFeedActive ? "A receber dados da pulseira" : "À espera de medições") : "Dispositivo desconectado")
+            Text(live.connected ? (live.heartRate != nil ? "A receber dados da pulseira" : "À espera de medições") : "Dispositivo desconectado")
                 .font(W.body).foregroundStyle(W.secondary)
         }.frame(maxWidth: .infinity, alignment: .leading).padding(.vertical, W.section)
+            .onAppear { visible = true; reconcileStream() }
+            .onDisappear { visible = false; reconcileStream() }
+            .onChange(of: scenePhase) { _, _ in reconcileStream() }
+            .onChange(of: live.connected) { _, _ in reconcileStream(rearm: true) }
+            .onChange(of: live.bonded) { _, _ in reconcileStream(rearm: true) }
+            .onChange(of: live.backfilling) { _, _ in reconcileStream() }
     }
-}
-
-struct PersonalDeviceScreen: View {
-    @EnvironmentObject private var live: LiveState
-    @State private var showManager = false
-    var body: some View {
-        ZStack {
-            W.background.ignoresSafeArea()
-            ScrollView {
-            VStack(spacing: W.section) {
-                Text("DEFINIÇÕES DO DISPOSITIVO").font(W.label).tracking(1)
-                Text(live.advertisingName ?? "DISPOSITIVO WHOOP").font(W.heading)
-                HStack { Text("ESTADO").underline(); Spacer(); PersonalStrapBadge() }.font(W.label)
-                Spacer()
-                HStack {
-                    Image(systemName: "applewatch").font(W.deviceIllustration)
-                    Image(systemName: live.connected ? "link" : "xmark.circle").foregroundStyle(live.connected ? W.green : W.red)
-                    Image(systemName: "iphone").font(W.deviceIllustration)
-                }
-                Text(live.connected ? "WHOOP LIGADA" : "WHOOP DESLIGADA").font(W.heading)
-                Text(live.connected ? "A sincronização é gerida localmente no teu iPhone." : "Toca em emparelhar para ligares a tua pulseira.").font(W.body).foregroundStyle(W.secondary).multilineTextAlignment(.center)
-                Spacer()
-                Button { showManager = true } label: {
-                    PersonalWhoopCard { Label(live.connected ? "GERIR DISPOSITIVO" : "EMPARELHAR UM DISPOSITIVO", systemImage: "applewatch").font(W.label).padding(.vertical, W.gap) }
-                }
-            }.padding(W.margin)
-            }
-        }.foregroundStyle(W.text).buttonStyle(.plain)
-            .sheet(isPresented: $showManager) { NavigationStack { PersonalPairingScreen().toolbar { ToolbarItem(placement: .topBarTrailing) { Button("Fechar") { showManager = false } } } } }
+    private func reconcileStream(rearm: Bool = false) {
+        let wanted = PersonalConnectionPresentation.wantsLive(visible: visible,
+            active: scenePhase == .active, connected: live.connected, backfilling: live.backfilling)
+        if wanted && !ownsStream { model.startRealtimeHR(); ownsStream = true }
+        else if !wanted && ownsStream { model.stopRealtimeHR(); ownsStream = false }
+        else if wanted && rearm { model.rearmRealtimeIfWanted() }
     }
 }
 
@@ -459,7 +460,7 @@ struct PersonalWhoopMore: View {
                 }.padding(W.margin).padding(.bottom, W.dockHeight + W.section)
             }
         }.foregroundStyle(W.text).buttonStyle(.plain)
-            .sheet(item: $destination) { PersonalDetail(destination: $0) }
+            .modifier(PersonalDestinationPresentation(destination: $destination))
     }
     private func row(_ title: String, _ icon: String, _ route: PersonalDestination) -> some View {
         Button { destination = route } label: {

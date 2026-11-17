@@ -64,10 +64,10 @@ struct PersonalSyncCard: View {
         PersonalWhoopCard {
             VStack(alignment: .leading, spacing: S.margin) {
                 HStack {
-                    Label(live.connected ? "PULSEIRA LIGADA" : "PULSEIRA DESLIGADA", systemImage: "applewatch")
+                    Label(PersonalConnectionPresentation.title(connected: live.connected, historyReady: live.historyReady, backfilling: live.backfilling, experimental: live.historySyncExperimental, hasError: live.lastSyncError != nil), systemImage: "waveform.path.ecg")
                         .font(S.label)
                     Spacer()
-                    Circle().fill(live.connected ? S.green : S.muted).frame(width: S.gap, height: S.gap)
+                    Circle().fill(live.connected ? (live.historyReady && live.lastSyncError == nil && !live.historySyncExperimental ? S.green : S.yellow) : S.muted).frame(width: S.gap, height: S.gap)
                 }
                 if live.backfilling {
                     ProgressView("A sincronizar · \(live.syncChunksThisSession) blocos recebidos")
@@ -82,6 +82,17 @@ struct PersonalSyncCard: View {
                 }
                 if live.connected && !live.historyReady {
                     Text("Ligação em preparação. O histórico ainda não está disponível para sincronizar.").font(S.label).foregroundStyle(S.secondary)
+                }
+                if live.historySyncExperimental {
+                    Text("A pulseira está ligada, mas não entregou histórico utilizável. O suporte ao histórico WHOOP 5.0/MG é experimental; sem esses dados não é possível calcular o sono e os treinos.").font(S.body).foregroundStyle(S.yellow)
+                }
+                if let hint = live.pairingHint { Text(hint).font(S.body).foregroundStyle(S.secondary) }
+                if let guide = live.reconnectGuide { Text(guide).font(S.body).foregroundStyle(S.yellow) }
+                if live.connected && !live.encryptedBond {
+                    Text("Emparelhamento completo ainda não confirmado. A ligação Bluetooth, por si só, não confirma acesso ao histórico.").font(S.body).foregroundStyle(S.secondary)
+                }
+                NavigationLink { DevicesView() } label: {
+                    Label("VER LIGAÇÃO E DIAGNÓSTICO", systemImage: "info.circle").font(S.label)
                 }
                 Button { ble.syncNow() } label: {
                     Label("SINCRONIZAR AGORA", systemImage: "arrow.triangle.2.circlepath").font(S.label)

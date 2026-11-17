@@ -115,7 +115,7 @@ struct PersonalLiveScreen: View {
                 VStack(alignment: .leading, spacing: S.section) {
                     Text("FREQUÊNCIA CARDÍACA").font(S.label).tracking(1)
                     HStack(alignment: .firstTextBaseline) {
-                        Text(live.connected && live.liveFeedActive ? live.heartRate.map(String.init) ?? "--" : "--").font(S.number)
+                        Text(PersonalConnectionPresentation.heartRate(connected: live.connected, bpm: live.heartRate).map(String.init) ?? "--").font(S.number)
                         Text("BPM").font(S.label).foregroundStyle(S.secondary)
                     }
                     Text(live.connected ? "A aguardar ou receber medições da pulseira" : "Pulseira desligada").font(S.body).foregroundStyle(S.secondary)

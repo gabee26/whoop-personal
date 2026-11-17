@@ -37,7 +37,7 @@ jobs:
         run: |
           set -euo pipefail
           mkdir -p build
-          xcodebuild -project Strand.xcodeproj -scheme Strand -destination 'platform=macOS' -derivedDataPath build/stress-tests -only-testing:StrandTests/PersonalStressSummaryTests -only-testing:StrandTests/StressModelCarryTests CODE_SIGNING_ALLOWED=NO test 2>&1 | tee build/personal-stress-tests.log
+          xcodebuild -project Strand.xcodeproj -scheme Strand -destination 'platform=macOS' -derivedDataPath build/stress-tests -only-testing:StrandTests/PersonalConnectionPresentationTests -only-testing:StrandTests/PersonalStressSummaryTests -only-testing:StrandTests/StressModelCarryTests CODE_SIGNING_ALLOWED=NO test 2>&1 | tee build/personal-stress-tests.log
       - name: Save stress test log
         if: always()
         uses: actions/upload-artifact@v4
